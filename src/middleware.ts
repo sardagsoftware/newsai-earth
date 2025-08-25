@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+// ...existing code...
 
 export function middleware() {
   const response = NextResponse.next();
