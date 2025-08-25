@@ -18,8 +18,12 @@ export default function ClimatePage() {
       if (!res.ok) throw new Error("Veri alınamadı");
       const result = await res.json();
       setData(result.articles || []);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError(String(err));
+      }
     } finally {
       setLoading(false);
     }
