@@ -1,3 +1,26 @@
+
+# newsai.earth
+
+Yapay zeka destekli, modern ve bilimsel haber platformu.
+
+## Telif Hakkı ve Lisans
+
+Bu proje MIT lisansı ile yayınlanmıştır. Tüm kodlar ve içerikler sardagsoftware tarafından 2025 yılında oluşturulmuştur. Detaylar için LICENSE dosyasına bakınız.
+
+## Kullanım Şartları
+
+Projeyi ticari ve kişisel amaçlarla kullanabilirsiniz. Kodun ve içeriğin yeniden dağıtımı, değiştirilmesi ve paylaşılması serbesttir. AI ile üretilen içeriklerin doğruluğu garanti edilmez.
+
+## Güvenlik
+
+Proje, Next.js güvenlik başlıkları ve rate limit altyapısı ile korunmaktadır. API anahtarları ve hassas bilgiler .env dosyasında saklanmalıdır.
+
+## SEO
+
+Her sayfa için zengin meta etiketler, robots.txt ve sitemap.xml dosyaları ile arama motoru optimizasyonu sağlanmıştır. Yapısal veri desteği eklenebilir.
+
+---
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
