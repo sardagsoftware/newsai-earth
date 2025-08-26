@@ -53,7 +53,7 @@ export default function RootLayout({
     <html lang="tr">
       <head>
         <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: `{
-  );
+          "@context": "https://schema.org",
           "@type": "WebSite",
           "name": "newsai.earth",
           "url": "https://newsai.earth",
@@ -67,7 +67,8 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-  {children}
+        {children}
       </body>
     </html>
-  }
+  );
+}
