@@ -1,5 +1,6 @@
 import "../globals.css";
 import NavBar from "../components/NavBar";
+import Footer from "../components/Footer";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { cookies } from 'next/headers';
@@ -65,9 +66,13 @@ export default async function RootLayout({
         style={{ background: '#18181b', color: '#ededed', minHeight: '100vh', margin: 0 }}
       >
         <NavBar />
-        <div className="mt-4">
+        <main className="mt-4">
           {children}
-        </div>
+        </main>
+        <Footer />
+        <noscript>
+          <div style={{padding:16,background:'#111',color:'#fff',textAlign:'center'}}>JavaScript kapalı — bazı özellikler çalışmayabilir.</div>
+        </noscript>
       </body>
     </html>
   );

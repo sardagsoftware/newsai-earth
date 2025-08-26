@@ -1,4 +1,3 @@
-
 # newsai.earth
 
 Yapay zeka destekli, modern ve bilimsel haber platformu.
@@ -57,3 +56,50 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Quick start (local)
+
+1. Install dependencies
+
+   npm install
+
+2. Run development server
+
+   npm run dev
+
+3. Build for production
+
+   npm run build
+
+4. Start production server locally
+
+   npx next start --port 3000
+
+
+## Environment variables (add to .env.local)
+
+- OPENAI_API_KEY=sk_...
+- JWT_SECRET=your_jwt_secret_in_production
+- HF_API_TOKEN=hf_... (optional — only if you're enabling Hugging Face reranker)
+- HF_ENDPOINT=https://api-inference.huggingface.co/endpoints/<id> (optional — preferred over model-level calls)
+- HF_DISABLED=true (set to true to disable Hugging Face calls if your quota/endpoint isn't ready)
+- PINECONE_API_KEY and PINECONE_ENV if using Pinecone
+
+Notes:
+- DO NOT commit `.env.local` or `mcp.config.json` to source control.
+- The project ships with a simple file-based demo user store in `.data/users.json`. Replace with a real DB for production.
+- For production, set a strong `JWT_SECRET` and configure persistent storage for users and sessions.
+
+## Hugging Face inference endpoint
+
+The code supports two HF modes:
+
+- Model-level inference (requires the model to be public or your token to have model inference access). This may return 404 for some models.
+- Preferred: create an HF Inference Endpoint via the Hugging Face UI and set `HF_ENDPOINT` to its URL; this is more stable and recommended if you want HF reranking.
+
+See `docs/HF_ENDPOINT_SETUP.md` for a short walkthrough.
+
+## Troubleshooting
+
+- If Hugging Face calls fail with 404 or credential errors, set `HF_DISABLED=true` and use OpenAI-only reranking until you can provision an endpoint or fix token permissions.
+- If builds fail due to types or linting, run `npm run dev` and fix errors shown in the terminal; the project compiles with TypeScript and Tailwind.

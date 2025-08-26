@@ -42,15 +42,16 @@ export async function POST(req: NextRequest) {
       q = body.q || "";
     }
 
+    const base = process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL || `http://localhost:${process.env.PORT || '3001'}`;
     const modules = [
-      { path: "/api/newsai", name: "Haber & AI" },
-      { path: "/api/climateai", name: "İklim & AI" },
-      { path: "/api/agricultureai", name: "Tarım & AI" },
-      { path: "/api/chemistryai", name: "Kimya & AI" },
-      { path: "/api/biologyai", name: "Biyoloji & AI" },
-      { path: "/api/elementsai", name: "Element & Bilim" },
-      { path: "/api/historyai", name: "Tarih & AI" },
-      { path: "/api/decisions", name: "Bakanlık Kararları" },
+      { path: `${base}/api/newsai`, name: "Haber & AI" },
+      { path: `${base}/api/climateai`, name: "İklim & AI" },
+      { path: `${base}/api/agricultureai`, name: "Tarım & AI" },
+      { path: `${base}/api/chemistryai`, name: "Kimya & AI" },
+      { path: `${base}/api/biologyai`, name: "Biyoloji & AI" },
+      { path: `${base}/api/elementsai`, name: "Element & Bilim" },
+      { path: `${base}/api/historyai`, name: "Tarih & AI" },
+      { path: `${base}/api/decisions`, name: "Bakanlık Kararları" },
     ];
 
     const fetches = modules.map(async (m) => {
@@ -140,6 +141,53 @@ export async function POST(req: NextRequest) {
         }
         scored.sort((a, b) => b.score - a.score);
         const top = scored.slice(0, 30).map((s) => ({ ...s.item, _score: s.score }));
+  // If HF is disabled by env var, skip HF rerank
+  if (!process.env.HF_DISABLED && process.env.HF_API_TOKEN && top.length > 1) {
+          try {
+            const hfCandidates = top.map((t) => {
+              const obj = t as Record<string, unknown>;
+              const title = typeof obj.title === 'string' ? obj.title : String(obj.title ?? '');
+              const summary = typeof obj.summary === 'string' ? obj.summary : String(obj.summary ?? '');
+              return (title + '\n' + summary).slice(0, 2000);
+            });
+            const hfBody = { inputs: { query: q, candidates: hfCandidates } };
+            // prefer explicit endpoint if provided, otherwise try the model-level inference path
+            const hfModelUrl = 'https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-V3.1-Base';
+            const hfEndpointUrl = process.env.HF_ENDPOINT ? process.env.HF_ENDPOINT : hfModelUrl;
+            const hfResp = await fetch(hfEndpointUrl, {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${process.env.HF_API_TOKEN}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify(hfBody),
+            });
+            if (!hfResp.ok) {
+              const txt = await hfResp.text();
+              console.warn('HF rerank call failed', hfResp.status, txt.slice(0, 500));
+              // If we tried the model-level url and got Not Found, hint to use an endpoint
+              if (hfResp.status === 404 && hfEndpointUrl === hfModelUrl) {
+                console.warn('Model-level inference returned 404. Consider creating a Hugging Face Inference Endpoint for DeepSeek and set HF_ENDPOINT to its URL.');
+              }
+            }
+            if (hfResp.ok) {
+              const hfJson = await hfResp.json();
+              // Expecting hfJson.scores or array of numbers; adapt safely
+              let scores: number[] = [];
+              if (Array.isArray(hfJson)) {
+                scores = hfJson.map((x: unknown) => (typeof x === 'number' ? x : 0));
+              } else if (hfJson && typeof hfJson === 'object' && 'scores' in hfJson && Array.isArray((hfJson as Record<string, unknown>)['scores'])) {
+                const arr = (hfJson as Record<string, unknown>)['scores'] as unknown[];
+                scores = arr.map((x: unknown) => (typeof x === 'number' ? x : 0));
+              }
+              if (scores.length === hfCandidates.length) {
+                const hfScored = top.map((item, i) => ({ score: scores[i], item }));
+                hfScored.sort((a, b) => b.score - a.score);
+                const final = hfScored.map((s) => ({ ...(s.item as Record<string, unknown>), _score_hf: s.score }));
+                return new Response(JSON.stringify({ results: final }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+              }
+            }
+          } catch (e) {
+            console.warn('HF rerank failed', e);
+          }
+        }
 
         return new Response(JSON.stringify({ results: top }), { status: 200, headers: { "Content-Type": "application/json" } });
       } catch (e) {
