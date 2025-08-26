@@ -6,3 +6,12 @@ body {
   background: #18181b;
   color: #ededed;
 }
+
+/* UI tweaks */
+.btn-gradient{background:linear-gradient(90deg,#7c3aed,#06b6d4,#ec4899);}
+.card-glass{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.04)); backdrop-filter: blur(6px);}
+.rounded-2xl{border-radius:16px}
+
+/* Input placeholder and focus */
+input, select, textarea{transition:box-shadow .15s ease, transform .12s ease}
+
