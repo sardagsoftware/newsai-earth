@@ -52,17 +52,7 @@ export default function RootLayout({
   return (
     <html lang="tr">
       <head>
-        <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: `{
-          "@context": "https://schema.org",
-          "@type": "WebSite",
-          "name": "newsai.earth",
-          "url": "https://newsai.earth",
-          "description": "Yapay zeka destekli bilimsel haber platformu. Dünya genelinden AI ile özetlenmiş haberler ve analizler.",
-          "publisher": {
-            "@type": "Organization",
-            "name": "sardagsoftware"
-          }
-        }` }} />
+        {/* SEO için JSON-LD scripti CSP nedeniyle kaldırıldı */}
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
