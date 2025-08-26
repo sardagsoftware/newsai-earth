@@ -1,4 +1,31 @@
 import type { NextRequest } from "next/server";
+import OpenAI from "openai";
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+function cosine(a: number[], b: number[]) {
+  let dot = 0;
+  let na = 0;
+  let nb = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    na += a[i] * a[i];
+    nb += b[i] * b[i];
+  }
+  return dot / (Math.sqrt(na) * Math.sqrt(nb) + 1e-12);
+}
+
+async function embedTexts(texts: string[]) {
+  if (!process.env.OPENAI_API_KEY) return [];
+  const batchSize = 32;
+  const embeddings: number[][] = [];
+  for (let i = 0; i < texts.length; i += batchSize) {
+    const batch = texts.slice(i, i + batchSize);
+    const resp = await openai.embeddings.create({ model: "text-embedding-3-small", input: batch });
+    for (const d of resp.data) embeddings.push(d.embedding as number[]);
+  }
+  return embeddings;
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -71,7 +98,7 @@ export async function POST(req: NextRequest) {
 
     // Deduplicate by id/url/title fallback
     const seen = new Set<string>();
-    const results: unknown[] = [];
+    const results: Record<string, unknown>[] = [];
     for (const item of rawResults) {
       const it = item as Record<string, unknown>;
       const key = (typeof it.id === "string" && it.id) || (typeof it.url === "string" && it.url) || (typeof it.title === "string" && it.title) || JSON.stringify(it);
@@ -79,10 +106,40 @@ export async function POST(req: NextRequest) {
       if (seen.has(key)) continue;
       seen.add(key);
       results.push(it);
-      if (results.length >= 30) break; // limit
+      if (results.length >= 120) break; // collect a bit more before ranking
     }
 
-    return new Response(JSON.stringify({ results }), { status: 200, headers: { "Content-Type": "application/json" } });
+    // If OpenAI key present, embed query and results and re-rank by cosine similarity
+    if (process.env.OPENAI_API_KEY && q.trim()) {
+      try {
+        const queryEmbeddingResp = await openai.embeddings.create({ model: "text-embedding-3-small", input: q });
+        const queryEmbedding = queryEmbeddingResp.data[0].embedding as number[];
+
+        // Build texts to embed for results: prefer title + summary/description
+        const texts = results.map((r) => {
+          const title = typeof r.title === "string" ? r.title : "";
+          const summary = typeof r.summary === "string" ? r.summary : typeof r.description === "string" ? r.description : "";
+          return (title + " \n " + summary).slice(0, 2000);
+        });
+
+        const resEmbeddings = await embedTexts(texts);
+        const scored: { score: number; item: Record<string, unknown> }[] = [];
+        for (let i = 0; i < results.length && i < resEmbeddings.length; i++) {
+          const sc = cosine(queryEmbedding, resEmbeddings[i]);
+          scored.push({ score: sc, item: results[i] });
+        }
+        scored.sort((a, b) => b.score - a.score);
+        const top = scored.slice(0, 30).map((s) => ({ ...s.item, _score: s.score }));
+
+        return new Response(JSON.stringify({ results: top }), { status: 200, headers: { "Content-Type": "application/json" } });
+      } catch (e) {
+        // if embedding fails, fall back to raw results
+        console.warn("OpenAI embedding failed", e);
+      }
+    }
+
+    // Fallback: return deduped results without ranking
+    return new Response(JSON.stringify({ results: results.slice(0, 30) }), { status: 200, headers: { "Content-Type": "application/json" } });
   } catch (err: unknown) {
     return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
