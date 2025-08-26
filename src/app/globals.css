@@ -24,7 +24,6 @@
     animation: spin 4s linear infinite;
   }
 }
-@import "tailwindcss";
 
 :root {
   --background: #ffffff;
