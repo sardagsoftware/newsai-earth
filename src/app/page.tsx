@@ -33,11 +33,12 @@ export default function Home() {
               {[
                 { href: "/news", icon: "🌍", label: "Haber & AI" },
                 { href: "/agriculture", icon: "🌱", label: "Tarım & AI" },
-                { href: "/climate", icon: "�️", label: "İklim & AI" },
+                { href: "/climate", icon: "🌦️", label: "İklim & AI" },
                 { href: "/elements", icon: "🧪", label: "Element & Bilim" },
                 { href: "/chemistry", icon: "🔬", label: "Kimya & AI" },
                 { href: "/biology", icon: "🧬", label: "Biyoloji & AI" },
                 { href: "/history", icon: "📜", label: "Tarih & AI" },
+                { href: "/decisions", icon: "⚖️", label: "Bakanlık Kararları" },
               ].map((modul, i) => (
                 <li key={modul.href} className="relative group">
                   <Link href={modul.href} className="block bg-gradient-to-br from-orange-400 via-yellow-300 to-orange-500 text-gray-900 rounded-2xl shadow-xl p-6 text-center font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl">
