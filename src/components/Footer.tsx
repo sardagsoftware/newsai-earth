@@ -23,7 +23,7 @@ export default function Footer() {
           <span className="font-semibold">© 2013 - 2025 Sardag</span>
           <span>AiLydian • AitBondie.ai • Ukalai.ai • Payream</span>
           <span>Fikri Mülkiyet Hakları • Gizlilik • GDPR • KVKK • Kullanım Şartları</span>
-          <span className="text-sm text-gray-300">Türkiye'de geliştirilmiştir • Geliştiriciye sonsuz teşekkürler ❤️‍🔥</span>
+          <span className="text-sm text-gray-300">Türkiye&apos;de geliştirilmiştir • Geliştiriciye sonsuz teşekkürler ❤️</span>
         </div>
         <div className="flex flex-col items-end gap-2">
           <div className="flex items-center gap-2">

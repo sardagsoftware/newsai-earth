@@ -1,7 +1,8 @@
 "use client";
 
-import Footer from "../components/Footer";
 import Link from "next/link";
+import Footer from "../components/Footer";
+import SearchBar from "../components/SearchBar";
 
 export default function Home() {
   return (
@@ -28,28 +29,26 @@ export default function Home() {
           <h1 className="text-4xl md:text-5xl font-bold text-center mb-2 bg-gradient-to-r from-orange-400 via-yellow-300 to-orange-500 bg-clip-text text-transparent animate-gradient">BİLİMSEL YAPAY ZEKA PLATFORM</h1>
           <p className="text-gray-400 text-center mb-4 text-lg">Dünya genelinden AI ile özetlenmiş haberler, bilim ve teknoloji içerikleri.</p>
           <input type="text" placeholder="Komut veya anahtar kelime yazın..." className="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-orange-400 mb-4 shadow-lg" />
-          <nav className="w-full">
-            <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-              {[
-                { href: "/news", icon: "🌍", label: "Haber & AI" },
-                { href: "/agriculture", icon: "🌱", label: "Tarım & AI" },
-                { href: "/climate", icon: "🌦️", label: "İklim & AI" },
-                { href: "/elements", icon: "🧪", label: "Element & Bilim" },
-                { href: "/chemistry", icon: "🔬", label: "Kimya & AI" },
-                { href: "/biology", icon: "🧬", label: "Biyoloji & AI" },
-                { href: "/history", icon: "📜", label: "Tarih & AI" },
-                { href: "/decisions", icon: "⚖️", label: "Bakanlık Kararları" },
-              ].map((modul, i) => (
-                <li key={modul.href} className="relative group">
-                  <Link href={modul.href} className="block bg-gradient-to-br from-orange-400 via-yellow-300 to-orange-500 text-gray-900 rounded-2xl shadow-xl p-6 text-center font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl">
-                    <span className="text-3xl block mb-2 animate-bounce">{modul.icon}</span>
-                    <span className="block animate-gradient-move group-hover:animate-gradient-move-fast">{modul.label}</span>
+            <div className="w-full">
+              <SearchBar />
+
+              <div className="mt-6 flex flex-wrap gap-3 justify-center">
+                {[
+                  { href: "/news", label: "Haber & AI" },
+                  { href: "/agriculture", label: "Tarım & AI" },
+                  { href: "/climate", label: "İklim & AI" },
+                  { href: "/elements", label: "Element & Bilim" },
+                  { href: "/chemistry", label: "Kimya & AI" },
+                  { href: "/biology", label: "Biyoloji & AI" },
+                  { href: "/history", label: "Tarih & AI" },
+                  { href: "/decisions", label: "Bakanlık Kararları" },
+                ].map((modul) => (
+                  <Link key={modul.href} href={modul.href} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 text-white font-semibold transform transition-all hover:scale-105 animate-bounce">
+                    {modul.label}
                   </Link>
-                  <span className="absolute top-2 right-2 text-xs text-orange-500 animate-pulse">{modul.label}</span>
-                </li>
-              ))}
-            </ul>
-          </nav>
+                ))}
+              </div>
+            </div>
         </div>
       </main>
       <Footer />
