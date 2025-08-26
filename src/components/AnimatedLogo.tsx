@@ -27,8 +27,8 @@ export default function AnimatedLogo({ size = 40 }: { size?: number }) {
       <style jsx>{`
         .logo-svg{display:block}
         .logo-wrap{transform-origin:center;}
-        .logo-svg{animation: logo-rotate 8s linear infinite;}
-        .logo-inner{animation: logo-bob 3s ease-in-out infinite; transform-origin:12px 12px}
+  .logo-svg{animation: logo-rotate 6s linear infinite;}
+  .logo-inner{animation: logo-bob 2s ease-in-out infinite; transform-origin:12px 12px}
         @keyframes logo-rotate{0%{transform:rotate(0)}50%{transform:rotate(12deg)}100%{transform:rotate(0deg)}}
         @keyframes logo-bob{0%{transform:translateY(0)}50%{transform:translateY(-3px)}100%{transform:translateY(0)}}
         @media (prefers-reduced-motion: reduce){

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { Decision } from "./schema";
+// type Decision removed to avoid unused-type lint warning
 import { fetchDecisions } from "./fetcher";
 import { OpenAI } from "openai";
 

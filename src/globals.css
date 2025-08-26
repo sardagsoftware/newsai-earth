@@ -28,4 +28,34 @@ input, select, textarea{transition:box-shadow .15s ease, transform .12s ease}
 /* subtle svg icon sizing inside buttons */
 .icon-btn svg{width:18px;height:18px;display:block}
 
+/* Tooltip for icon buttons */
+.icon-btn[data-tooltip]{position:relative}
+.icon-btn[data-tooltip]::after{
+  content:attr(data-tooltip);
+  position:absolute;
+  bottom:calc(100% + 8px);
+  left:50%;
+  transform:translateX(-50%) scale(.95);
+  background:rgba(15,23,36,0.95);
+  color:#fff;
+  padding:6px 8px;
+  border-radius:6px;
+  font-size:12px;
+  white-space:nowrap;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .12s ease, transform .12s ease;
+  box-shadow:0 6px 18px rgba(2,6,23,0.6);
+}
+.icon-btn[data-tooltip]:hover::after,
+.icon-btn[data-tooltip]:focus::after{opacity:1;transform:translateX(-50%) scale(1)}
+
+/* Mobile tweaks */
+@media (max-width: 640px){
+  .search-container{padding:0.75rem}
+  .icon-btn{padding:0.45rem}
+  .search-input{padding:0.6rem 0.9rem}
+  .small-chip{display:none}
+}
+
 
