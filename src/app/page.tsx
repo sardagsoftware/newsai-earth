@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Footer from "../components/Footer";
 import SearchBar from "../components/SearchBar";
+import ResultsHost from "../components/ResultsHost";
 
 export default function Home() {
   return (
@@ -30,7 +31,18 @@ export default function Home() {
           <p className="text-gray-400 text-center mb-4 text-lg">Dünya genelinden AI ile özetlenmiş haberler, bilim ve teknoloji içerikleri.</p>
           <input type="text" placeholder="Komut veya anahtar kelime yazın..." className="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-orange-400 mb-4 shadow-lg" />
             <div className="w-full">
-              <SearchBar />
+              <SearchBar onResultAction={(res: unknown) => {
+                try {
+                  // expect { results: [] } or array
+                  const r = (res as unknown as Record<string, unknown>)?.results ?? (Array.isArray(res) ? res : null);
+                  // update client-side state via custom event
+                  (window as unknown as Record<string, unknown>).__newsai_latest_results = r as unknown;
+                  const ev = new CustomEvent("newsai:results", { detail: r });
+                  window.dispatchEvent(ev);
+                } catch (_e) {
+                  // ignore
+                }
+              }} />
 
               <div className="mt-6 flex flex-wrap gap-3 justify-center">
                 {[
@@ -47,6 +59,9 @@ export default function Home() {
                     {modul.label}
                   </Link>
                 ))}
+              </div>
+              <div className="w-full">
+                <ResultsHost />
               </div>
             </div>
         </div>
