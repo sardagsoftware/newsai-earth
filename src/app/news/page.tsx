@@ -1,4 +1,5 @@
 "use client";
+import Footer from "../../components/Footer";
 import React, { useState } from "react";
 import Head from "next/head";
 
@@ -37,7 +38,7 @@ export default function NewsPage() {
   );
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       <Head>
         <title>Dünya Haberleri & AI | newsai.earth</title>
         <meta name="description" content="Yapay zeka destekli, dünya genelinden haberler ve özetler. Tarım, iklim, bilim, tarih ve daha fazlası." />
@@ -65,7 +66,7 @@ export default function NewsPage() {
           }
         }` }} />
       </Head>
-      <main className="p-8">
+      <main className="p-8 flex-1">
         <h1 className="text-3xl font-bold mb-4">Dünya Haberleri & AI</h1>
         <p className="mb-8">Yapay zeka destekli, dünya genelinden haberler ve özetler.</p>
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -107,6 +108,7 @@ export default function NewsPage() {
           ))}
         </div>
       </main>
-    </>
+      <Footer />
+    </div>
   );
 }
