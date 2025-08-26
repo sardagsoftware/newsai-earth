@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import OpenAI from "openai";
+import { upsertToPinecone } from "../../../lib/pinecone";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -123,6 +124,15 @@ export async function POST(req: NextRequest) {
         });
 
         const resEmbeddings = await embedTexts(texts);
+        // optionally upsert embeddings into Pinecone for faster future queries
+        if (process.env.PINECONE_API_KEY && process.env.PINECONE_URL) {
+          try {
+            const vectors = resEmbeddings.map((v, i) => ({ id: `search-${Date.now()}-${i}`, values: v, metadata: { title: results[i].title, source: results[i].source } }));
+            await upsertToPinecone('newsai-index', vectors);
+          } catch (e) {
+            console.warn('pinecone upsert error', e);
+          }
+        }
         const scored: { score: number; item: Record<string, unknown> }[] = [];
         for (let i = 0; i < results.length && i < resEmbeddings.length; i++) {
           const sc = cosine(queryEmbedding, resEmbeddings[i]);
