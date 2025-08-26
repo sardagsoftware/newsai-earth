@@ -15,3 +15,17 @@ body {
 /* Input placeholder and focus */
 input, select, textarea{transition:box-shadow .15s ease, transform .12s ease}
 
+/* SearchBar specific styles */
+.search-container{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.06)); padding:0.5rem; border-radius:14px; box-shadow:0 6px 18px rgba(2,6,23,0.6);}
+.search-input{background:#071018; border:1px solid rgba(148,163,184,0.06); padding:0.75rem 1rem; border-radius:9999px; color:#eef2ff}
+.search-input:focus{outline:none; box-shadow:0 0 0 4px rgba(124,58,237,0.12)}
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;gap:0.5rem;padding:0.5rem 0.75rem;border-radius:9999px;background:#0b1220;border:1px solid rgba(255,255,255,0.03);color:#e6edf3}
+.icon-btn:hover{background:rgba(255,255,255,0.02);transform:translateY(-1px)}
+.icon-btn.recording{background:#8b0000;color:#fff}
+.small-chip{background:#0f1724;padding:0.35rem 0.6rem;border-radius:8px;border:1px solid rgba(255,255,255,0.03);font-size:0.8rem}
+.search-results-card{background:linear-gradient(180deg,#071018, #061018);border:1px solid rgba(255,255,255,0.03);}
+
+/* subtle svg icon sizing inside buttons */
+.icon-btn svg{width:18px;height:18px;display:block}
+
+

@@ -12,28 +12,29 @@ export default function DecisionsPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetchDecisions();
+      async function load() {
+        setLoading(true);
+        setError("");
+        try {
+          const params = new URLSearchParams();
+          if (country) params.append("country", country);
+          if (ministry) params.append("ministry", ministry);
+          if (type) params.append("type", type);
+          if (lang) params.append("lang", lang);
+          const res = await fetch(`/api/decisions?${params.toString()}`);
+          if (!res.ok) throw new Error("Veri alınamadı");
+          const data = await res.json();
+          setDecisions(data.decisions || []);
+        } catch {
+          setError("Veri alınamadı");
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      load();
   }, [country, ministry, type, lang]);
 
-  async function fetchDecisions() {
-    setLoading(true);
-    setError("");
-    try {
-      const params = new URLSearchParams();
-      if (country) params.append("country", country);
-      if (ministry) params.append("ministry", ministry);
-      if (type) params.append("type", type);
-      if (lang) params.append("lang", lang);
-      const res = await fetch(`/api/decisions?${params.toString()}`);
-      if (!res.ok) throw new Error("Veri alınamadı");
-      const data = await res.json();
-      setDecisions(data.decisions || []);
-    } catch (err) {
-      setError("Veri alınamadı");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-8">

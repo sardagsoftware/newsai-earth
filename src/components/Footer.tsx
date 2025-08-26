@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import Image from "next/image";
 
 export default function Footer() {
   const [weather, setWeather] = useState<{ temp: number; desc: string; icon: string } | null>(null);
@@ -29,7 +30,7 @@ export default function Footer() {
           <div className="flex items-center gap-2">
             {weather ? (
               <>
-                <img src={weather.icon} alt="hava" className="w-7 h-7" />
+                <Image src={weather.icon} alt="hava" width={28} height={28} className="w-7 h-7" />
                 <div className="flex flex-col text-right">
                   <span className="font-bold">{weather.temp}°C</span>
                   <span className="text-xs text-gray-400">{weather.desc} güncel hava durumu</span>

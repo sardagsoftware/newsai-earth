@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { Decision, countries, ministries, decisionTypes, languages } from "./schema";
+import type { Decision } from "./schema";
 import { fetchDecisions } from "./fetcher";
 import { OpenAI } from "openai";
 

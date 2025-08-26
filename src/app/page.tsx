@@ -4,45 +4,29 @@ import Link from "next/link";
 import Footer from "../components/Footer";
 import SearchBar from "../components/SearchBar";
 import ResultsHost from "../components/ResultsHost";
+import AnimatedLogo from "../components/AnimatedLogo";
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#23272f] via-[#1a1d23] to-[#0a0a0a] text-gray-100 font-sans flex flex-col">
-      <header className="flex items-center gap-2 px-6 py-4 border-b border-gray-800">
-        <span className="mr-2 animate-spin-slow">
-          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="chatgpt-orange" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#FFB347" />
-                <stop offset="1" stopColor="#FF7F50" />
-              </linearGradient>
-            </defs>
-            <circle cx="20" cy="20" r="18" fill="url(#chatgpt-orange)" />
-            <ellipse cx="20" cy="20" rx="10" ry="6" fill="#fff" opacity="0.15" />
-            <ellipse cx="20" cy="20" rx="6" ry="10" fill="#fff" opacity="0.10" />
-            <text x="10" y="26" fontSize="16" fontWeight="bold" fill="#fff">AI</text>
-          </svg>
-        </span>
-        <span className="text-xl font-bold tracking-tight">BİLİMSEL YAPAY ZEKA PLATFORM</span>
-      </header>
+  {/* header removed to keep homepage focused and professional */}
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-8">
-        <div className="w-full max-w-3xl flex flex-col items-center gap-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-center mb-2 bg-gradient-to-r from-orange-400 via-yellow-300 to-orange-500 bg-clip-text text-transparent animate-gradient">BİLİMSEL YAPAY ZEKA PLATFORM</h1>
-          <p className="text-gray-400 text-center mb-4 text-lg">Dünya genelinden AI ile özetlenmiş haberler, bilim ve teknoloji içerikleri.</p>
-          <input type="text" placeholder="Komut veya anahtar kelime yazın..." className="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-orange-400 mb-4 shadow-lg" />
-            <div className="w-full">
-              <SearchBar onResultAction={(res: unknown) => {
-                try {
-                  // expect { results: [] } or array
-                  const r = (res as unknown as Record<string, unknown>)?.results ?? (Array.isArray(res) ? res : null);
-                  // update client-side state via custom event
-                  (window as unknown as Record<string, unknown>).__newsai_latest_results = r as unknown;
-                  const ev = new CustomEvent("newsai:results", { detail: r });
-                  window.dispatchEvent(ev);
-                } catch (_e) {
-                  // ignore
-                }
-              }} />
+        <div className="w-full max-w-3xl flex flex-col items-center gap-6">
+          <div className="flex flex-col items-center gap-4">
+            <AnimatedLogo />
+            <p className="text-gray-400 text-center text-lg">Dünya genelinden AI ile özetlenmiş haberler, bilim ve teknoloji içerikleri.</p>
+          </div>
+          <div className="w-full">
+            <SearchBar onResultAction={(res: unknown) => {
+              try {
+                const r = (res as unknown as Record<string, unknown>)?.results ?? (Array.isArray(res) ? res : null);
+                (window as unknown as Record<string, unknown>).__newsai_latest_results = r as unknown;
+                const ev = new CustomEvent("newsai:results", { detail: r });
+                window.dispatchEvent(ev);
+              } catch {
+                // ignore
+              }
+            }} />
 
               <div className="mt-6 flex flex-wrap gap-3 justify-center">
                 {[

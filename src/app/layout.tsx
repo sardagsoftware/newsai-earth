@@ -2,6 +2,7 @@ import "../globals.css";
 import NavBar from "../components/NavBar";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { cookies } from 'next/headers';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -45,15 +46,19 @@ export const metadata: Metadata = {
   }
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // read nonce from cookie set by middleware
+  const cookieStore = await cookies();
+  const nonce = cookieStore.get('csp-nonce')?.value ?? '';
   return (
     <html lang="tr">
       <head>
-        {/* SEO için JSON-LD scripti CSP nedeniyle kaldırıldı */}
+        {/* Provide nonce for any inline scripts if needed */}
+        {nonce ? <meta name="csp-nonce" content={nonce} /> : null}
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

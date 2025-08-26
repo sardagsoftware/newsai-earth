@@ -111,33 +111,67 @@ export default function SearchBar({ onResultAction }: { onResultAction?: ResultH
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full search-container">
       <form onSubmit={submit} className="flex flex-col gap-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Ara: örn. iklim değişikliği, tarım uygulamaları..."
-            className="flex-1 px-4 py-3 rounded-full bg-[#0b1220] border border-gray-800 text-gray-100 focus:outline-none"
+            aria-label="Arama"
+            className="search-input flex-1"
           />
-          <button type="button" onClick={toggleRecord} title="Sesle arama" className={`px-4 py-2 rounded-full ${recording ? "bg-red-600" : "bg-gray-800"} text-white`}>{recording ? "● Kaydediliyor" : "🎤"}</button>
-          <button type="submit" disabled={loading} className="px-4 py-2 rounded-full bg-gradient-to-r from-purple-600 to-pink-500 text-white">{loading ? "Araıyor..." : "Ara"}</button>
+
+          <button type="button" onClick={toggleRecord} title="Sesle arama" aria-pressed={recording} className={`icon-btn ${recording ? "recording" : ""}`}>
+            {recording ? (
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                <circle cx="12" cy="12" r="6"></circle>
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M12 1v11"></path>
+                <path d="M8 11a4 4 0 0 0 8 0"></path>
+                <path d="M19 11v2a7 7 0 0 1-14 0v-2"></path>
+              </svg>
+            )}
+          </button>
+
+          <button type="submit" disabled={loading} className="icon-btn" aria-busy={loading}>
+            {loading ? (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin" aria-hidden>
+                <path d="M21 12a9 9 0 0 1-9 9"></path>
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <circle cx="11" cy="11" r="7"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            )}
+          </button>
         </div>
 
         <div className="flex items-center gap-2 text-sm text-gray-300">
-          <label className="cursor-pointer px-3 py-2 bg-gray-900 rounded-md border border-gray-700">
-            📷 Görsel
+          <label className="cursor-pointer">
+            <div className="icon-btn" aria-hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="14" rx="2"/><path d="M8 21v-3a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v3"/></svg>
+              <span className="sr-only">Görsel yükle</span>
+            </div>
             <input type="file" accept="image/*" onChange={onImageChange} multiple className="hidden" />
           </label>
-          <label className="cursor-pointer px-3 py-2 bg-gray-900 rounded-md border border-gray-700">
-            📎 Dosya
+
+          <label className="cursor-pointer">
+            <div className="icon-btn" aria-hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/></svg>
+              <span className="sr-only">Dosya yükle</span>
+            </div>
             <input type="file" onChange={onFileChange} multiple className="hidden" />
           </label>
-          <div className="text-xs text-gray-400">{images.length} görsel, {files.length} dosya seçildi</div>
+
+          <div className="small-chip">{images.length} görsel · {files.length} dosya</div>
         </div>
 
         {results.length > 0 && (
-          <div className="mt-3 bg-[#071018] border border-gray-800 rounded-lg p-3 max-h-80 overflow-auto">
+          <div className="mt-3 search-results-card rounded-lg p-3 max-h-80 overflow-auto">
             {results.map((r, i) => {
               const item = r as unknown as Record<string, unknown>;
               const header = (item["source"] ?? item["category"]) as string | undefined;
