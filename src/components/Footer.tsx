@@ -4,6 +4,7 @@ import Image from "next/image";
 
 export default function Footer() {
   const [weather, setWeather] = useState<{ temp: number; desc: string; icon: string } | null>(null);
+  const [imgError, setImgError] = useState(false);
   useEffect(() => {
     fetch("https://api.open-meteo.com/v1/forecast?latitude=41.01&longitude=28.97&current_weather=true")
       .then((res) => res.json())
@@ -30,7 +31,19 @@ export default function Footer() {
           <div className="flex items-center gap-2">
             {weather ? (
               <>
-                <Image src={weather.icon} alt="hava" width={28} height={28} className="w-7 h-7" />
+                {!imgError ? (
+                  <Image
+                    src={weather.icon}
+                    alt="hava"
+                    width={28}
+                    height={28}
+                    className="w-7 h-7"
+                    onError={() => setImgError(true)}
+                    unoptimized
+                  />
+                ) : (
+                  <div className="w-7 h-7 flex items-center justify-center text-xl">☀️</div>
+                )}
                 <div className="flex flex-col text-right">
                   <span className="font-bold">{weather.temp}°C</span>
                   <span className="text-xs text-gray-400">{weather.desc} güncel hava durumu</span>
