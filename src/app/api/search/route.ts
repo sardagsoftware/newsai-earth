@@ -76,9 +76,10 @@ export async function POST(req: NextRequest) {
       q = body.q || "";
     }
 
-  // Determine base URL robustly: prefer explicit env, then Vercel-provided URL, otherwise derive from request origin.
+  // Determine base URL robustly: prefer explicit env, then Vercel-provided URL, then request origin, then a safe production fallback.
   const reqOrigin = typeof req !== 'undefined' ? new URL(req.url).origin : undefined;
-  const base = process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : reqOrigin || `http://localhost:${process.env.PORT || '3001'}`);
+  const safeProdDomain = 'https://newsai-earth.vercel.app';
+  const base = process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (reqOrigin || safeProdDomain));
     const modules = [
       { path: `${base}/api/newsai`, name: "Haber & AI" },
       { path: `${base}/api/climateai`, name: "İklim & AI" },
