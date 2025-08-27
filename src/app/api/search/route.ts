@@ -90,28 +90,27 @@ export async function POST(req: NextRequest) {
       { path: `${base}/api/decisions`, name: "Bakanlık Kararları" },
     ];
 
-  const fetches = modules.map(async (m) => {
-      try {
-        // If multipart, forward the form data to the first module that accepts files.
-        if (formData && (m.path === "/api/newsai" || m.path === "/api/decisions")) {
-          const fd = new FormData();
-          fd.append("q", q);
-          for (const f of formData.getAll("images")) fd.append("images", f as unknown as Blob);
-          for (const f of formData.getAll("files")) fd.append("files", f as unknown as Blob);
-          const r = await fetchWithDebug(m.path, { method: "POST", body: fd }, 'module-multipart');
-          return { module: m.name, payload: r.json ?? r.text ?? { status: r.status, ok: r.ok } };
-        }
-
-        const r = await fetchWithDebug(`${m.path}?q=${encodeURIComponent(q)}`, undefined, 'module-get');
-        return { module: m.name, payload: r.json ?? r.text ?? { status: r.status, ok: r.ok } };
-      } catch (e) {
-        logError('module.fetch', { path: m.path, err: e });
-        return { error: String(e), source: m.path, stack: (e instanceof Error && e.stack) ? e.stack : undefined };
+  const settled: Array<Record<string, unknown>> = [];
+  // Perform sequential fetches so we can capture the first failure context more clearly in logs
+  for (const m of modules) {
+    try {
+      if (formData && (m.path === "/api/newsai" || m.path === "/api/decisions")) {
+        const fd = new FormData();
+        fd.append("q", q);
+        for (const f of formData.getAll("images")) fd.append("images", f as unknown as Blob);
+        for (const f of formData.getAll("files")) fd.append("files", f as unknown as Blob);
+        const r = await fetchWithDebug(m.path, { method: "POST", body: fd }, 'module-multipart');
+        settled.push({ module: m.name, payload: r.json ?? r.text ?? { status: r.status, ok: r.ok }, debug: { status: r.status, text: (r.text || '').slice(0,1000) } });
+        continue;
       }
-    });
-
-
-    const settled = await Promise.all(fetches);
+      const r = await fetchWithDebug(`${m.path}?q=${encodeURIComponent(q)}`, undefined, 'module-get');
+      settled.push({ module: m.name, payload: r.json ?? r.text ?? { status: r.status, ok: r.ok }, debug: { status: r.status, text: (r.text || '').slice(0,1000) } });
+    } catch (e) {
+      logError('module.fetch', { path: m.path, err: e });
+      settled.push({ error: String(e), source: m.path, stack: (e instanceof Error && e.stack) ? e.stack : undefined });
+      // keep going to collect other modules but note the failure
+    }
+  }
 
     // Collect fetch-level errors to return for debugging (temporary)
     const fetchErrors: Array<Record<string, unknown>> = [];
