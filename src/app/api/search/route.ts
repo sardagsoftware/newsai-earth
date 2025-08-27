@@ -1,4 +1,6 @@
 import type { NextRequest } from "next/server";
+// import newsai handler for internal short-circuit debug
+import { GET as newsaiGET } from "../newsai/route";
 import OpenAI from "openai";
 import { upsertToPinecone } from "../../../lib/pinecone";
 
@@ -91,6 +93,24 @@ export async function POST(req: NextRequest) {
     }
   } catch (e) {
     // ignore URL parse errors for debug
+  }
+
+  // Internal handler short-circuit for debugging: call module handlers directly to avoid network fetches
+  try {
+    const urlObj = new URL(req.url);
+    if (urlObj.searchParams.get('internal') === '1') {
+      // call newsai handler directly (GET) and return its JSON
+      const fakeReq = new Request(`${base}/api/newsai?q=${encodeURIComponent(q)}`);
+      try {
+        const r = await newsaiGET(fakeReq as any);
+        return r as Response;
+      } catch (e) {
+        // fall through to normal behavior
+        logError('internal.newsai.call', e);
+      }
+    }
+  } catch (e) {
+    // ignore
   }
     const modules = [
     { path: `${base}/api/newsai`, name: "Haber & AI" },
