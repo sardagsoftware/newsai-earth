@@ -16,6 +16,23 @@ function logError(tag: string, e: unknown) {
   }
 }
 
+async function fetchWithDebug(url: string, options?: RequestInit, tag?: string) {
+  try {
+    const r = await fetch(url, options);
+    const text = await r.text();
+    let json: unknown | undefined;
+    try {
+      json = text ? JSON.parse(text) : undefined;
+    } catch (e) {
+      // not JSON
+    }
+    return { ok: r.ok, status: r.status, statusText: r.statusText, json, text };
+  } catch (e) {
+    logError(`fetchWithDebug:${tag ?? url}`, e);
+    throw e;
+  }
+}
+
 function cosine(a: number[], b: number[]) {
   let dot = 0;
   let na = 0;
@@ -79,17 +96,15 @@ export async function POST(req: NextRequest) {
           fd.append("q", q);
           for (const f of formData.getAll("images")) fd.append("images", f as unknown as Blob);
           for (const f of formData.getAll("files")) fd.append("files", f as unknown as Blob);
-          const r = await fetch(m.path, { method: "POST", body: fd });
-          const json = await r.json();
-          return { module: m.name, payload: json };
+          const r = await fetchWithDebug(m.path, { method: "POST", body: fd }, 'module-multipart');
+          return { module: m.name, payload: r.json ?? r.text ?? { status: r.status, ok: r.ok } };
         }
 
-  const r = await fetch(`${m.path}?q=${encodeURIComponent(q)}`);
-  const json = await r.json();
-  return { module: m.name, payload: json };
+        const r = await fetchWithDebug(`${m.path}?q=${encodeURIComponent(q)}`, undefined, 'module-get');
+        return { module: m.name, payload: r.json ?? r.text ?? { status: r.status, ok: r.ok } };
       } catch (e) {
-  logError('module.fetch', { path: m.path, err: e });
-  return { error: String(e), source: m.path, stack: (e instanceof Error && e.stack) ? e.stack : undefined };
+        logError('module.fetch', { path: m.path, err: e });
+        return { error: String(e), source: m.path, stack: (e instanceof Error && e.stack) ? e.stack : undefined };
       }
     });
 
@@ -186,20 +201,19 @@ export async function POST(req: NextRequest) {
             // prefer explicit endpoint if provided, otherwise try the model-level inference path
             const hfModelUrl = 'https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-V3.1-Base';
             const hfEndpointUrl = process.env.HF_ENDPOINT ? process.env.HF_ENDPOINT : hfModelUrl;
-            const hfResp = await fetch(hfEndpointUrl, {
+            const hfResp = await fetchWithDebug(hfEndpointUrl, {
               method: 'POST',
               headers: { Authorization: `Bearer ${process.env.HF_API_TOKEN}`, 'Content-Type': 'application/json' },
               body: JSON.stringify(hfBody),
-            });
+            }, 'hf-rerank');
             if (!hfResp.ok) {
-              const txt = await hfResp.text();
-              logError('hf.rerank.http', { status: hfResp.status, textPreview: txt.slice(0, 500) });
+              logError('hf.rerank.http', { status: hfResp.status, textPreview: (hfResp.text || '').slice(0, 1000) });
               if (hfResp.status === 404 && hfEndpointUrl === hfModelUrl) {
                 console.warn('Model-level inference returned 404. Consider creating a Hugging Face Inference Endpoint for DeepSeek and set HF_ENDPOINT to its URL.');
               }
             }
             if (hfResp.ok) {
-              const hfJson = await hfResp.json();
+              const hfJson = hfResp.json ?? (hfResp.text ? JSON.parse(hfResp.text) : undefined);
               // Expecting hfJson.scores or array of numbers; adapt safely
               let scores: number[] = [];
               if (Array.isArray(hfJson)) {
