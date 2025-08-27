@@ -80,6 +80,18 @@ export async function POST(req: NextRequest) {
   const reqOrigin = typeof req !== 'undefined' ? new URL(req.url).origin : undefined;
   const safeProdDomain = 'https://newsai-earth.vercel.app';
   const base = process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (reqOrigin || safeProdDomain));
+
+  // Strong debug short-circuit: allow verifying that this deployed function is the latest.
+  // Trigger via POST /api/search?force_debug=1 or by sending q === '__PING__'
+  try {
+    const _reqUrlForPing = new URL(req.url);
+    const forceDebug = _reqUrlForPing.searchParams.get('force_debug') === '1';
+    if (forceDebug || q === '__PING__') {
+      return new Response(JSON.stringify({ ok: true, debugBase: base, reqOrigin, VERCEL_URL: process.env.VERCEL_URL || null, now: Date.now() }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+  } catch (e) {
+    // ignore URL parse errors for debug
+  }
     const modules = [
       { path: `${base}/api/newsai`, name: "Haber & AI" },
       { path: `${base}/api/climateai`, name: "İklim & AI" },
