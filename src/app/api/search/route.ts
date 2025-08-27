@@ -113,6 +113,13 @@ export async function POST(req: NextRequest) {
       settled.push({ error: String(e), source: m.path, stack: (e instanceof Error && e.stack) ? e.stack : undefined });
       // keep going to collect other modules but note the failure
     }
+
+  // TEMP DEBUG: immediately return settled to inspect which module fetch failed in prod
+  try {
+    return new Response(JSON.stringify({ settled, debugBase: base }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  } catch (e) {
+    // fallthrough to normal behavior
+  }
   }
 
     // Collect fetch-level errors to return for debugging (temporary)
