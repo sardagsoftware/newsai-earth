@@ -236,7 +236,7 @@ export async function POST(req: NextRequest) {
           }
         }
 
-  return new Response(JSON.stringify({ results: top, errors: fetchErrors }), { status: 200, headers: { "Content-Type": "application/json" } });
+  return new Response(JSON.stringify({ results: top, errors: fetchErrors, debugBase: base }), { status: 200, headers: { "Content-Type": "application/json" } });
       } catch (e) {
         // if embedding fails, fall back to raw results
         logError('openai.embedding', e);
@@ -244,7 +244,7 @@ export async function POST(req: NextRequest) {
     }
 
   // Fallback: return deduped results without ranking
-  return new Response(JSON.stringify({ results: results.slice(0, 30), errors: fetchErrors }), { status: 200, headers: { "Content-Type": "application/json" } });
+  return new Response(JSON.stringify({ results: results.slice(0, 30), errors: fetchErrors, debugBase: base }), { status: 200, headers: { "Content-Type": "application/json" } });
   } catch (err: unknown) {
     logError('search.route', err);
     return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: { "Content-Type": "application/json" } });
