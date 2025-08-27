@@ -91,6 +91,9 @@ export async function POST(req: NextRequest) {
     ];
 
   const settled: Array<Record<string, unknown>> = [];
+  // allow quick verbose debugging from prod: POST /api/search?debug=1
+  const reqUrl = new URL(req.url);
+  const verboseDebug = reqUrl.searchParams.get('debug') === '1';
   // Perform sequential fetches so we can capture the first failure context more clearly in logs
   for (const m of modules) {
     try {
@@ -119,6 +122,27 @@ export async function POST(req: NextRequest) {
         const se = s as Record<string, unknown>;
         fetchErrors.push({ source: se.source ?? se.module ?? 'unknown', error: se.error ?? se, stack: se.stack ?? null });
       }
+    }
+
+    // If verbose debug requested, return the raw settled array and fetchErrors for diagnosis
+    if (verboseDebug) {
+      // limit text sizes to avoid huge responses
+      const limited = settled.map((it) => {
+        try {
+          const copy: Record<string, unknown> = {};
+          for (const k of Object.keys(it)) {
+            const v = (it as Record<string, unknown>)[k];
+            if (typeof v === 'string') copy[k] = v.slice(0, 2000);
+            else if (typeof v === 'object' && v !== null && 'text' in (v as any)) {
+              copy[k] = { status: (v as any).status, text: String((v as any).text).slice(0, 2000) };
+            } else copy[k] = v;
+          }
+          return copy;
+        } catch (e) {
+          return { error: 'serialize-failed' };
+        }
+      });
+      return new Response(JSON.stringify({ results: [], settled: limited, fetchErrors, debugBase: base }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
 
     // Flatten, tag with source, dedupe and limit
