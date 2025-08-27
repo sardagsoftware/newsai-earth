@@ -28,10 +28,11 @@ export default function RegisterPage() {
       <form onSubmit={submit} className="w-full max-w-md bg-[#0f1720] p-6 rounded-lg">
         <h2 className="text-2xl font-bold mb-4">Kayıt Ol</h2>
         {error && <div className="text-red-400 mb-2">{error}</div>}
-        <input className="w-full mb-2 p-2 rounded" placeholder="İsim" value={name} onChange={(e) => setName(e.target.value)} />
-        <input className="w-full mb-2 p-2 rounded" placeholder="E-posta" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <input type="password" className="w-full mb-4 p-2 rounded" placeholder="Parola" value={password} onChange={(e) => setPassword(e.target.value)} />
-        <button className="w-full bg-gradient-to-r from-blue-500 to-purple-500 p-2 rounded font-semibold">Kayıt Ol</button>
+  <input className="w-full mb-2 p-2 rounded bg-[#081018]" placeholder="İsim" value={name} onChange={(e) => setName(e.target.value)} />
+  <input className="w-full mb-2 p-2 rounded bg-[#081018]" placeholder="E-posta" value={email} onChange={(e) => setEmail(e.target.value)} />
+  <input type="password" className="w-full mb-4 p-2 rounded bg-[#081018]" placeholder="Parola" value={password} onChange={(e) => setPassword(e.target.value)} />
+  <button className="w-full bg-gradient-to-r from-blue-500 to-purple-500 p-2 rounded font-semibold">Kayıt Ol</button>
+  <div className="mt-3 text-sm text-gray-400">Zaten hesabınız var mı? <a href="/login" className="text-blue-400 underline">Giriş yapın</a></div>
       </form>
     </div>
   );

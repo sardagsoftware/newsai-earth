@@ -26,9 +26,10 @@ export default function LoginPage() {
       <form onSubmit={submit} className="w-full max-w-md bg-[#0f1720] p-6 rounded-lg">
         <h2 className="text-2xl font-bold mb-4">Giriş Yap</h2>
         {error && <div className="text-red-400 mb-2">{error}</div>}
-        <input className="w-full mb-2 p-2 rounded" placeholder="E-posta" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <input type="password" className="w-full mb-4 p-2 rounded" placeholder="Parola" value={password} onChange={(e) => setPassword(e.target.value)} />
-        <button className="w-full bg-gradient-to-r from-green-400 to-teal-500 p-2 rounded font-semibold">Giriş</button>
+  <input className="w-full mb-2 p-2 rounded bg-[#081018]" placeholder="E-posta" value={email} onChange={(e) => setEmail(e.target.value)} />
+  <input type="password" className="w-full mb-4 p-2 rounded bg-[#081018]" placeholder="Parola" value={password} onChange={(e) => setPassword(e.target.value)} />
+  <button className="w-full bg-gradient-to-r from-green-400 to-teal-500 p-2 rounded font-semibold">Giriş</button>
+  <div className="mt-3 text-sm text-gray-400">Henüz hesabınız yok mu? <a href="/register" className="text-blue-400 underline">Kayıt olun</a></div>
       </form>
     </div>
   );

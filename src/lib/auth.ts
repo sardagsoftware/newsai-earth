@@ -7,7 +7,6 @@ const COOKIE_NAME = 'newsai_token';
 
 // Warn in server logs if default secret is used (not a runtime exception)
 if (!process.env.JWT_SECRET) {
-  // eslint-disable-next-line no-console
   console.warn('Warning: JWT_SECRET is not set. Using default insecure secret. Set JWT_SECRET in production environment.');
 }
 

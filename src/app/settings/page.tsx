@@ -40,7 +40,8 @@ export default function SettingsPage() {
     <div className="min-h-screen flex items-center justify-center p-8">
       <div className="w-full max-w-md bg-[#0f1720] p-6 rounded-lg">
         <h2 className="text-2xl font-bold mb-4">Kullanıcı Ayarları</h2>
-        <div className="mb-2">E-posta: {user.email}</div>
+  <div className="mb-2">E-posta: {user.email}</div>
+  <div className="mb-4 text-sm text-gray-400">Hesap bilgilerinizi güvenli bir yerde saklayın. Bu demo uygulamada parola kurtarma yoktur.</div>
         <input className="w-full mb-2 p-2 rounded" value={name} onChange={(e) => setName(e.target.value)} />
         <input className="w-full mb-4 p-2 rounded" placeholder="Yeni parola" value={password} onChange={(e) => setPassword(e.target.value)} />
         <div className="flex gap-2">

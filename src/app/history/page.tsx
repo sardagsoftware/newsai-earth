@@ -1,5 +1,7 @@
 "use client";
 import React, { useState } from "react";
+import ArticleCard from "../../components/ArticleCard";
+import slugify from "../../lib/slugify";
 
 export default function HistoryPage() {
   const [data, setData] = useState<{ title: string; summary: string; category: string; source?: string }[]>([]);
@@ -67,14 +69,7 @@ export default function HistoryPage() {
       {error && <div className="text-red-500 mb-4">{error}</div>}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {filteredData.map((item, idx) => (
-          <div key={idx} className="bg-white rounded-xl shadow-lg p-6 flex flex-col gap-2 hover:scale-[1.02] transition-transform">
-            <div className="text-lg font-semibold mb-1">{item.title}</div>
-            <div className="text-gray-700 mb-2">{item.summary}</div>
-            <div className="text-xs text-orange-600 font-medium">Kategori: {item.category}</div>
-            {item.source && (
-              <a href={item.source} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-500 underline">Kaynak</a>
-            )}
-          </div>
+          <ArticleCard key={idx} title={item.title} summary={item.summary} category={item.category} source={item.source} href={`/history/${slugify((item.title as string) || ('item-'+idx))}`} accent="from-orange-300 via-amber-400 to-orange-600" />
         ))}
       </div>
     </main>

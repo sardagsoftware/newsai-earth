@@ -3,6 +3,8 @@
 import Footer from "../../components/Footer";
 import React, { useState } from "react";
 import Head from "next/head";
+import ArticleCard from "../../components/ArticleCard";
+import slugify from "../../lib/slugify";
 
 export default function NewsPage() {
   const [news, setNews] = useState<{ title: string; summary: string; category: string; source?: string }[]>([]);
@@ -86,16 +88,12 @@ export default function NewsPage() {
         </div>
         {error && <div className="text-red-400 mb-4 font-semibold">{error}</div>}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-          {filteredNews.map((item, idx) => (
-            <div key={idx} className="bg-gradient-to-br from-[#23235b] via-[#18181b] to-[#0f2027] border-2 border-transparent rounded-2xl shadow-xl p-6 flex flex-col gap-2 hover:border-pink-400 hover:shadow-2xl hover:scale-[1.03] transition-all duration-200">
-              <div className="text-xl font-bold mb-1 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">{item.title}</div>
-              <div className="text-gray-200 mb-2 text-base">{item.summary}</div>
-              <div className="text-xs text-pink-400 font-medium">Kategori: {item.category}</div>
-              {item.source && (
-                <a href={item.source} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-300 underline hover:text-pink-400 transition-colors">Kaynak</a>
-              )}
-            </div>
-          ))}
+          {filteredNews.map((item, idx) => {
+            const href = `/news/${slugify((item.title as string) || ('article-' + idx))}`;
+            return (
+              <ArticleCard key={idx} title={item.title} summary={item.summary} category={item.category} source={item.source} href={href} accent="from-blue-400 via-purple-400 to-pink-400" />
+            );
+          })}
         </div>
       </main>
       <Footer />

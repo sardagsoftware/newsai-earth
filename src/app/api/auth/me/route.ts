@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     const user = listUsers().find(u => u.id === id);
     if (!user) return NextResponse.json({ user: null });
     return NextResponse.json({ user: { id: user.id, email: user.email, name: user.name } });
-  } catch (_err) {
+  } catch {
     return NextResponse.json({ user: null });
   }
 }
