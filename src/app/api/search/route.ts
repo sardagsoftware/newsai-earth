@@ -96,6 +96,15 @@ export async function POST(req: NextRequest) {
 
     const settled = await Promise.all(fetches);
 
+    // Collect fetch-level errors to return for debugging (temporary)
+    const fetchErrors: Array<Record<string, unknown>> = [];
+    for (const s of settled) {
+      if (s && typeof s === 'object' && 'error' in (s as Record<string, unknown>)) {
+        const se = s as Record<string, unknown>;
+        fetchErrors.push({ source: se.source ?? se.module ?? 'unknown', error: se.error ?? se, stack: se.stack ?? null });
+      }
+    }
+
     // Flatten, tag with source, dedupe and limit
     const rawResults: unknown[] = [];
     for (const entry of settled) {
@@ -199,27 +208,27 @@ export async function POST(req: NextRequest) {
                 const arr = (hfJson as Record<string, unknown>)['scores'] as unknown[];
                 scores = arr.map((x: unknown) => (typeof x === 'number' ? x : 0));
               }
-              if (scores.length === hfCandidates.length) {
-                const hfScored = top.map((item, i) => ({ score: scores[i], item }));
-                hfScored.sort((a, b) => b.score - a.score);
-                const final = hfScored.map((s) => ({ ...(s.item as Record<string, unknown>), _score_hf: s.score }));
-                return new Response(JSON.stringify({ results: final }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-              }
+                      if (scores.length === hfCandidates.length) {
+                      const hfScored = top.map((item, i) => ({ score: scores[i], item }));
+                      hfScored.sort((a, b) => b.score - a.score);
+                      const final = hfScored.map((s) => ({ ...(s.item as Record<string, unknown>), _score_hf: s.score }));
+                      return new Response(JSON.stringify({ results: final, errors: fetchErrors }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+                    }
             }
           } catch (e) {
             logError('hf.rerank', e);
           }
         }
 
-        return new Response(JSON.stringify({ results: top }), { status: 200, headers: { "Content-Type": "application/json" } });
+  return new Response(JSON.stringify({ results: top, errors: fetchErrors }), { status: 200, headers: { "Content-Type": "application/json" } });
       } catch (e) {
         // if embedding fails, fall back to raw results
         logError('openai.embedding', e);
       }
     }
 
-    // Fallback: return deduped results without ranking
-    return new Response(JSON.stringify({ results: results.slice(0, 30) }), { status: 200, headers: { "Content-Type": "application/json" } });
+  // Fallback: return deduped results without ranking
+  return new Response(JSON.stringify({ results: results.slice(0, 30), errors: fetchErrors }), { status: 200, headers: { "Content-Type": "application/json" } });
   } catch (err: unknown) {
     logError('search.route', err);
     return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: { "Content-Type": "application/json" } });
