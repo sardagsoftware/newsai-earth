@@ -93,14 +93,14 @@ export async function POST(req: NextRequest) {
     // ignore URL parse errors for debug
   }
     const modules = [
-      { path: `${base}/api/newsai`, name: "Haber & AI" },
-      { path: `${base}/api/climateai`, name: "İklim & AI" },
-      { path: `${base}/api/agricultureai`, name: "Tarım & AI" },
-      { path: `${base}/api/chemistryai`, name: "Kimya & AI" },
-      { path: `${base}/api/biologyai`, name: "Biyoloji & AI" },
-      { path: `${base}/api/elementsai`, name: "Element & Bilim" },
-      { path: `${base}/api/historyai`, name: "Tarih & AI" },
-      { path: `${base}/api/decisions`, name: "Bakanlık Kararları" },
+    { path: `${base}/api/newsai`, name: "Haber & AI" },
+    { path: `${base}/api/climateai`, name: "İklim & AI" },
+    { path: `${base}/api/agricultureai`, name: "Tarım & AI" },
+    { path: `${base}/api/chemistryai`, name: "Kimya & AI" },
+    { path: `${base}/api/biologyai`, name: "Biyoloji & AI" },
+    { path: `${base}/api/elementsai`, name: "Element & Bilim" },
+    { path: `${base}/api/historyai`, name: "Tarih & AI" },
+    { path: `${base}/api/decisions`, name: "Bakanlık Kararları" },
     ];
 
   const settled: Array<Record<string, unknown>> = [];
@@ -122,11 +122,12 @@ export async function POST(req: NextRequest) {
       const r = await fetchWithDebug(`${m.path}?q=${encodeURIComponent(q)}`, undefined, 'module-get');
       settled.push({ module: m.name, payload: r.json ?? r.text ?? { status: r.status, ok: r.ok }, debug: { status: r.status, text: (r.text || '').slice(0,1000) } });
     } catch (e) {
-  // Ensure we capture detailed error info into the settled array so the prod response surfaces it
-  logError('module.fetch', { path: m.path, err: e });
-  const errMsg = e instanceof Error ? e.message : JSON.stringify(e);
-  const errStack = e instanceof Error && e.stack ? e.stack : undefined;
-  settled.push({ error: errMsg, source: m.path, stack: errStack });
+      // Ensure we capture detailed error info into the settled array so the prod response surfaces it
+      logError('module.fetch', { path: m.path, err: e });
+      const errMsg = e instanceof Error ? e.message : JSON.stringify(e);
+      const errStack = e instanceof Error && e.stack ? e.stack : undefined;
+      // add attemptedUrl to help debug base/relative resolution issues
+      settled.push({ error: errMsg, source: m.path, attemptedUrl: m.path, stack: errStack, rawError: typeof e === 'object' ? JSON.stringify(e, Object.getOwnPropertyNames(e)).slice(0,2000) : String(e) });
       // keep going to collect other modules but note the failure
     }
 
