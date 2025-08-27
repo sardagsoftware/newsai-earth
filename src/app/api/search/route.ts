@@ -4,7 +4,19 @@ import { GET as newsaiGET } from "../newsai/route";
 import OpenAI from "openai";
 import { upsertToPinecone } from "../../../lib/pinecone";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+let _openaiClient: OpenAI | null = null;
+function getOpenAI(): OpenAI | null {
+  try {
+    if (_openaiClient) return _openaiClient;
+    if (!process.env.OPENAI_API_KEY) return null;
+    _openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    return _openaiClient;
+  } catch (e) {
+    // don't throw during build if key missing or constructor fails; log and return null
+    console.warn('getOpenAI init failed', e);
+    return null;
+  }
+}
 
 function logError(tag: string, e: unknown) {
   try {
@@ -50,13 +62,14 @@ function cosine(a: number[], b: number[]) {
 }
 
 async function embedTexts(texts: string[]) {
-  if (!process.env.OPENAI_API_KEY) return [];
+  const client = getOpenAI();
+  if (!client) return [];
   const batchSize = 32;
   const embeddings: number[][] = [];
   for (let i = 0; i < texts.length; i += batchSize) {
     const batch = texts.slice(i, i + batchSize);
     try {
-      const resp = await openai.embeddings.create({ model: "text-embedding-3-small", input: batch });
+      const resp = await client.embeddings.create({ model: "text-embedding-3-small", input: batch });
       for (const d of resp.data) embeddings.push(d.embedding as number[]);
     } catch (err: unknown) {
       logError('embedTexts.batch', err);
@@ -143,8 +156,9 @@ export async function POST(req: NextRequest) {
       }
       const r = await fetchWithDebug(`${m.path}?q=${encodeURIComponent(q)}`, undefined, 'module-get');
       settled.push({ module: m.name, payload: r.json ?? r.text ?? { status: r.status, ok: r.ok }, debug: { status: r.status, text: (r.text || '').slice(0,1000) } });
-    } catch (e: unknown) {
+    } catch (_e: unknown) {
       // Ensure we capture detailed error info into the settled array so the prod response surfaces it
+      const e = _e as unknown;
       logError('module.fetch', { path: m.path, err: e });
       const errMsg = e instanceof Error ? e.message : JSON.stringify(e);
       const errStack = e instanceof Error && e.stack ? e.stack : undefined;
@@ -174,7 +188,7 @@ export async function POST(req: NextRequest) {
     if (verboseDebug) {
       // limit text sizes to avoid huge responses
       const limited = settled.map((it) => {
-        try {
+  try {
           const copy: Record<string, unknown> = {};
           for (const k of Object.keys(it)) {
             const v = (it as Record<string, unknown>)[k];
@@ -185,7 +199,7 @@ export async function POST(req: NextRequest) {
             } else copy[k] = v;
           }
           return copy;
-        } catch (e) {
+        } catch {
           return { error: 'serialize-failed' };
         }
       });
@@ -232,9 +246,11 @@ export async function POST(req: NextRequest) {
 
     // If OpenAI key present, embed query and results and re-rank by cosine similarity
     if (process.env.OPENAI_API_KEY && q.trim()) {
-      try {
-        const queryEmbeddingResp = await openai.embeddings.create({ model: "text-embedding-3-small", input: q });
-        const queryEmbedding = queryEmbeddingResp.data[0].embedding as number[];
+    try {
+      const client = getOpenAI();
+      if (!client) throw new Error('OpenAI client not initialized');
+      const queryEmbeddingResp = await client.embeddings.create({ model: "text-embedding-3-small", input: q });
+      const queryEmbedding = queryEmbeddingResp.data[0].embedding as number[];
 
         // Build texts to embed for results: prefer title + summary/description
         const texts = results.map((r) => {

@@ -1,14 +1,28 @@
 import { NextResponse } from "next/server";
 // type Decision removed to avoid unused-type lint warning
 import { fetchDecisions } from "./fetcher";
-import { OpenAI } from "openai";
+import OpenAI from "openai";
+
+let _openaiClient: OpenAI | null = null;
+function getOpenAI() {
+  try {
+    if (_openaiClient) return _openaiClient;
+    if (!process.env.OPENAI_API_KEY) return null;
+    _openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    return _openaiClient;
+  } catch (e) {
+    console.warn('getOpenAI init failed', e);
+    return null;
+  }
+}
 
 
 // OpenAI çeviri fonksiyonu
 async function translateOpenAI(text: string, targetLang: string): Promise<string> {
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const client = getOpenAI();
+  if (!client) return text;
   const prompt = `Aşağıdaki metni ${targetLang} diline çevir: ${text}`;
-  const completion = await openai.chat.completions.create({
+  const completion = await client.chat.completions.create({
     model: "gpt-3.5-turbo",
     messages: [{ role: "user", content: prompt }],
     max_tokens: 512

@@ -1,7 +1,18 @@
 import type { NextRequest } from 'next/server';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+let _openaiClient: OpenAI | null = null;
+function getOpenAI() {
+  try {
+    if (_openaiClient) return _openaiClient;
+    if (!process.env.OPENAI_API_KEY) return null;
+    _openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    return _openaiClient;
+  } catch (e) {
+    console.warn('getOpenAI init failed', e);
+    return null;
+  }
+}
 
 async function fetchWithDebug(url: string, options?: RequestInit) {
   try {
@@ -42,9 +53,10 @@ export async function POST(req: NextRequest) {
 
     // Try OpenAI embeddings directly
     let openaiResult: unknown = null;
-    if (process.env.OPENAI_API_KEY) {
+    const client = getOpenAI();
+    if (client) {
       try {
-        const r = await openai.embeddings.create({ model: 'text-embedding-3-small', input: q });
+        const r = await client.embeddings.create({ model: 'text-embedding-3-small', input: q });
         openaiResult = { ok: true, status: 200, dataPreview: Array.isArray(r.data) ? r.data.length : typeof r };
       } catch (err: unknown) {
         openaiResult = { error: String(err), stack: err instanceof Error ? err.stack : null };
