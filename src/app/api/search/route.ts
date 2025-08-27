@@ -4,6 +4,18 @@ import { upsertToPinecone } from "../../../lib/pinecone";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+function logError(tag: string, e: unknown) {
+  try {
+    if (e instanceof Error) {
+      console.error(`[${tag}]`, e.message, "stack:", e.stack);
+    } else {
+      console.error(`[${tag}]`, JSON.stringify(e));
+    }
+  } catch (err) {
+    console.error(`[${tag}] error serializing error`, err);
+  }
+}
+
 function cosine(a: number[], b: number[]) {
   let dot = 0;
   let na = 0;
@@ -22,8 +34,13 @@ async function embedTexts(texts: string[]) {
   const embeddings: number[][] = [];
   for (let i = 0; i < texts.length; i += batchSize) {
     const batch = texts.slice(i, i + batchSize);
-    const resp = await openai.embeddings.create({ model: "text-embedding-3-small", input: batch });
-    for (const d of resp.data) embeddings.push(d.embedding as number[]);
+    try {
+      const resp = await openai.embeddings.create({ model: "text-embedding-3-small", input: batch });
+      for (const d of resp.data) embeddings.push(d.embedding as number[]);
+    } catch (e) {
+      logError('embedTexts.batch', e);
+      // if a batch fails, continue with what we have
+    }
   }
   return embeddings;
 }
@@ -54,7 +71,7 @@ export async function POST(req: NextRequest) {
       { path: `${base}/api/decisions`, name: "Bakanlık Kararları" },
     ];
 
-    const fetches = modules.map(async (m) => {
+  const fetches = modules.map(async (m) => {
       try {
         // If multipart, forward the form data to the first module that accepts files.
         if (formData && (m.path === "/api/newsai" || m.path === "/api/decisions")) {
@@ -67,11 +84,12 @@ export async function POST(req: NextRequest) {
           return { module: m.name, payload: json };
         }
 
-        const r = await fetch(`${m.path}?q=${encodeURIComponent(q)}`);
-        const json = await r.json();
-        return { module: m.name, payload: json };
+  const r = await fetch(`${m.path}?q=${encodeURIComponent(q)}`);
+  const json = await r.json();
+  return { module: m.name, payload: json };
       } catch (e) {
-        return { error: String(e), source: m.path };
+  logError('module.fetch', { path: m.path, err: e });
+  return { error: String(e), source: m.path, stack: (e instanceof Error && e.stack) ? e.stack : undefined };
       }
     });
 
@@ -124,14 +142,19 @@ export async function POST(req: NextRequest) {
           return (title + " \n " + summary).slice(0, 2000);
         });
 
-        const resEmbeddings = await embedTexts(texts);
+        let resEmbeddings: number[][] = [];
+        try {
+          resEmbeddings = await embedTexts(texts);
+        } catch (e) {
+          logError('embedTexts', e);
+        }
         // optionally upsert embeddings into Pinecone for faster future queries
         if (process.env.PINECONE_API_KEY && process.env.PINECONE_URL) {
           try {
             const vectors = resEmbeddings.map((v, i) => ({ id: `search-${Date.now()}-${i}`, values: v, metadata: { title: results[i].title, source: results[i].source } }));
             await upsertToPinecone('newsai-index', vectors);
           } catch (e) {
-            console.warn('pinecone upsert error', e);
+            logError('pinecone.upsert', e);
           }
         }
         const scored: { score: number; item: Record<string, unknown> }[] = [];
@@ -161,8 +184,7 @@ export async function POST(req: NextRequest) {
             });
             if (!hfResp.ok) {
               const txt = await hfResp.text();
-              console.warn('HF rerank call failed', hfResp.status, txt.slice(0, 500));
-              // If we tried the model-level url and got Not Found, hint to use an endpoint
+              logError('hf.rerank.http', { status: hfResp.status, textPreview: txt.slice(0, 500) });
               if (hfResp.status === 404 && hfEndpointUrl === hfModelUrl) {
                 console.warn('Model-level inference returned 404. Consider creating a Hugging Face Inference Endpoint for DeepSeek and set HF_ENDPOINT to its URL.');
               }
@@ -185,20 +207,21 @@ export async function POST(req: NextRequest) {
               }
             }
           } catch (e) {
-            console.warn('HF rerank failed', e);
+            logError('hf.rerank', e);
           }
         }
 
         return new Response(JSON.stringify({ results: top }), { status: 200, headers: { "Content-Type": "application/json" } });
       } catch (e) {
         // if embedding fails, fall back to raw results
-        console.warn("OpenAI embedding failed", e);
+        logError('openai.embedding', e);
       }
     }
 
     // Fallback: return deduped results without ranking
     return new Response(JSON.stringify({ results: results.slice(0, 30) }), { status: 200, headers: { "Content-Type": "application/json" } });
   } catch (err: unknown) {
+    logError('search.route', err);
     return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
 }
