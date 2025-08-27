@@ -129,12 +129,17 @@ export async function POST(req: NextRequest) {
       const p = e.payload ?? e;
       if (p && typeof p === "object") {
         const obj = p as Record<string, unknown>;
+        // If this is an error object (from a failed fetch), record it in fetchErrors and skip adding as a result
+        if ('error' in obj) {
+          fetchErrors.push({ source: obj.source ?? moduleName, error: obj.error ?? obj, stack: obj.stack ?? null });
+          continue;
+        }
         if (Array.isArray(obj.articles)) {
-          for (const a of obj.articles) rawResults.push({ ...(a as Record<string, unknown>), source: moduleName });
+          for (const a of obj.articles) rawResults.push({ ...(a as Record<string, unknown>), source: obj.source ?? moduleName });
         } else if (Array.isArray(p)) {
           for (const a of (p as unknown[])) rawResults.push({ ...(a as Record<string, unknown>), source: moduleName });
         } else {
-          rawResults.push({ ...(obj as Record<string, unknown>), source: moduleName });
+          rawResults.push({ ...(obj as Record<string, unknown>), source: obj.source ?? moduleName });
         }
       } else {
         rawResults.push({ value: p, source: moduleName });
