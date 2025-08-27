@@ -76,7 +76,9 @@ export async function POST(req: NextRequest) {
       q = body.q || "";
     }
 
-    const base = process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL || `http://localhost:${process.env.PORT || '3001'}`;
+  // Determine base URL robustly: prefer explicit env, then Vercel-provided URL, otherwise derive from request origin.
+  const reqOrigin = typeof req !== 'undefined' ? new URL(req.url).origin : undefined;
+  const base = process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : reqOrigin || `http://localhost:${process.env.PORT || '3001'}`);
     const modules = [
       { path: `${base}/api/newsai`, name: "Haber & AI" },
       { path: `${base}/api/climateai`, name: "İklim & AI" },
