@@ -7,10 +7,10 @@ async function fetchWithDebug(url: string, options?: RequestInit) {
   try {
     const r = await fetch(url, options);
     const text = await r.text();
-    let json: unknown | undefined;
-    try { json = text ? JSON.parse(text) : undefined; } catch (e) { /* not json */ }
+  let json: unknown | undefined;
+  try { json = text ? JSON.parse(text) : undefined; } catch { /* not json */ }
     return { ok: r.ok, status: r.status, statusText: r.statusText, json, text };
-  } catch (e) {
+  } catch (e: unknown) {
     return { error: String(e), stack: e instanceof Error ? e.stack : null };
   }
 }
@@ -46,15 +46,15 @@ export async function POST(req: NextRequest) {
       try {
         const r = await openai.embeddings.create({ model: 'text-embedding-3-small', input: q });
         openaiResult = { ok: true, status: 200, dataPreview: Array.isArray(r.data) ? r.data.length : typeof r };
-      } catch (e) {
-        openaiResult = { error: String(e), stack: e instanceof Error ? e.stack : null };
+      } catch (err: unknown) {
+        openaiResult = { error: String(err), stack: err instanceof Error ? err.stack : null };
       }
     } else {
       openaiResult = { error: 'OPENAI_API_KEY not set' };
     }
 
     return new Response(JSON.stringify({ base, moduleResults, openaiResult }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-  } catch (e) {
-    return new Response(JSON.stringify({ error: String(e), stack: e instanceof Error ? e.stack : null }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+  } catch (err: unknown) {
+    return new Response(JSON.stringify({ error: String(err), stack: err instanceof Error ? err.stack : null }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 }

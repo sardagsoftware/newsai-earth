@@ -19,15 +19,17 @@ export async function GET(req: Request) {
           },
           body: JSON.stringify({ model: 'text-embedding-3-small', input: 'ping' }),
         });
-        const text = await r.text();
-        let json = null;
-        try { json = text ? JSON.parse(text) : null; } catch (e) { json = null; }
+    const text = await r.text();
+  let json: unknown = null;
+  try { json = text ? JSON.parse(text) : null; } catch { json = null; }
         return new Response(JSON.stringify({ ok: r.ok, status: r.status, statusText: r.statusText, bodyText: (text||'').slice(0,2000), bodyJson: json }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-      } catch (e: any) {
-        return new Response(JSON.stringify({ error: String(e), stack: e?.stack || null }), { status: 500, headers: { 'Content-Type': 'application/json' } });
-      }
+          } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            const stack = err instanceof Error ? err.stack : null;
+            return new Response(JSON.stringify({ error: msg, stack }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+          }
     }
-  } catch (e) {
+  } catch {
     // devam et ve normal articles yanıtını dön
   }
 

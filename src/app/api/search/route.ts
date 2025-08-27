@@ -19,19 +19,19 @@ function logError(tag: string, e: unknown) {
 }
 
 async function fetchWithDebug(url: string, options?: RequestInit, tag?: string) {
-  try {
-    const r = await fetch(url, options);
+    try {
+      const r = await fetch(url, options);
     const text = await r.text();
     let json: unknown | undefined;
     try {
       json = text ? JSON.parse(text) : undefined;
-    } catch (e) {
+    } catch {
       // not JSON
     }
-    return { ok: r.ok, status: r.status, statusText: r.statusText, json, text };
-  } catch (e) {
-    logError(`fetchWithDebug:${tag ?? url}`, e);
-    throw e;
+  return { ok: r.ok, status: r.status, statusText: r.statusText, json, text };
+  } catch (err: unknown) {
+    logError(`fetchWithDebug:${tag ?? url}`, err);
+    throw err;
   }
 }
 
@@ -39,12 +39,14 @@ function cosine(a: number[], b: number[]) {
   let dot = 0;
   let na = 0;
   let nb = 0;
-  for (let i = 0; i < a.length; i++) {
-    dot += a[i] * b[i];
-    na += a[i] * a[i];
-    nb += b[i] * b[i];
-  }
-  return dot / (Math.sqrt(na) * Math.sqrt(nb) + 1e-12);
+    const len = Math.min(a.length, b.length);
+    for (let i = 0; i < len; i++) {
+      dot += a[i] * b[i];
+      na += a[i] * a[i];
+      nb += b[i] * b[i];
+    }
+
+    return dot / (Math.sqrt(na) * Math.sqrt(nb) + 1e-12);
 }
 
 async function embedTexts(texts: string[]) {
@@ -56,8 +58,8 @@ async function embedTexts(texts: string[]) {
     try {
       const resp = await openai.embeddings.create({ model: "text-embedding-3-small", input: batch });
       for (const d of resp.data) embeddings.push(d.embedding as number[]);
-    } catch (e) {
-      logError('embedTexts.batch', e);
+    } catch (err: unknown) {
+      logError('embedTexts.batch', err);
       // if a batch fails, continue with what we have
     }
   }
@@ -91,7 +93,7 @@ export async function POST(req: NextRequest) {
     if (forceDebug || q === '__PING__') {
       return new Response(JSON.stringify({ ok: true, debugBase: base, reqOrigin, VERCEL_URL: process.env.VERCEL_URL || null, now: Date.now() }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
-  } catch (e) {
+  } catch {
     // ignore URL parse errors for debug
   }
 
@@ -102,14 +104,14 @@ export async function POST(req: NextRequest) {
       // call newsai handler directly (GET) and return its JSON
       const fakeReq = new Request(`${base}/api/newsai?q=${encodeURIComponent(q)}`);
       try {
-        const r = await newsaiGET(fakeReq as any);
+        const r = await newsaiGET(fakeReq as Request);
         return r as Response;
-      } catch (e) {
+      } catch (err: unknown) {
         // fall through to normal behavior
-        logError('internal.newsai.call', e);
+        logError('internal.newsai.call', err);
       }
     }
-  } catch (e) {
+  } catch {
     // ignore
   }
     const modules = [
@@ -129,7 +131,7 @@ export async function POST(req: NextRequest) {
   const verboseDebug = reqUrl.searchParams.get('debug') === '1';
   // Perform sequential fetches so we can capture the first failure context more clearly in logs
   for (const m of modules) {
-    try {
+  try {
       if (formData && (m.path === "/api/newsai" || m.path === "/api/decisions")) {
         const fd = new FormData();
         fd.append("q", q);
@@ -141,7 +143,7 @@ export async function POST(req: NextRequest) {
       }
       const r = await fetchWithDebug(`${m.path}?q=${encodeURIComponent(q)}`, undefined, 'module-get');
       settled.push({ module: m.name, payload: r.json ?? r.text ?? { status: r.status, ok: r.ok }, debug: { status: r.status, text: (r.text || '').slice(0,1000) } });
-    } catch (e) {
+    } catch (e: unknown) {
       // Ensure we capture detailed error info into the settled array so the prod response surfaces it
       logError('module.fetch', { path: m.path, err: e });
       const errMsg = e instanceof Error ? e.message : JSON.stringify(e);
@@ -154,7 +156,7 @@ export async function POST(req: NextRequest) {
   // TEMP DEBUG: immediately return settled to inspect which module fetch failed in prod
   try {
     return new Response(JSON.stringify({ settled, debugBase: base }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-  } catch (e) {
+  } catch {
     // fallthrough to normal behavior
   }
   }
@@ -177,8 +179,9 @@ export async function POST(req: NextRequest) {
           for (const k of Object.keys(it)) {
             const v = (it as Record<string, unknown>)[k];
             if (typeof v === 'string') copy[k] = v.slice(0, 2000);
-            else if (typeof v === 'object' && v !== null && 'text' in (v as any)) {
-              copy[k] = { status: (v as any).status, text: String((v as any).text).slice(0, 2000) };
+            else if (typeof v === 'object' && v !== null && 'text' in (v as Record<string, unknown>)) {
+              const vv = v as Record<string, unknown>;
+              copy[k] = { status: vv['status'] ?? null, text: String(vv['text'] ?? '').slice(0, 2000) };
             } else copy[k] = v;
           }
           return copy;
@@ -258,7 +261,7 @@ export async function POST(req: NextRequest) {
         const scored: { score: number; item: Record<string, unknown> }[] = [];
         for (let i = 0; i < results.length && i < resEmbeddings.length; i++) {
           const sc = cosine(queryEmbedding, resEmbeddings[i]);
-          scored.push({ score: sc, item: results[i] });
+            if (typeof sc === 'number') scored.push({ score: sc, item: results[i] });
         }
         scored.sort((a, b) => b.score - a.score);
         const top = scored.slice(0, 30).map((s) => ({ ...s.item, _score: s.score }));
@@ -287,7 +290,7 @@ export async function POST(req: NextRequest) {
               }
             }
             if (hfResp.ok) {
-              const hfJson = hfResp.json ?? (hfResp.text ? JSON.parse(hfResp.text) : undefined);
+              const hfJson = hfResp.json ?? (hfResp.text ? JSON.parse(String(hfResp.text)) : undefined);
               // Expecting hfJson.scores or array of numbers; adapt safely
               let scores: number[] = [];
               if (Array.isArray(hfJson)) {
@@ -303,15 +306,15 @@ export async function POST(req: NextRequest) {
                       return new Response(JSON.stringify({ results: final, errors: fetchErrors }), { status: 200, headers: { 'Content-Type': 'application/json' } });
                     }
             }
-          } catch (e) {
-            logError('hf.rerank', e);
+          } catch (err: unknown) {
+            logError('hf.rerank', err);
           }
         }
 
   return new Response(JSON.stringify({ results: top, errors: fetchErrors, debugBase: base }), { status: 200, headers: { "Content-Type": "application/json" } });
-      } catch (e) {
+      } catch (err: unknown) {
         // if embedding fails, fall back to raw results
-        logError('openai.embedding', e);
+        logError('openai.embedding', err);
       }
     }
 

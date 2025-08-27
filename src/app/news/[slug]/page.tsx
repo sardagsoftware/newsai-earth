@@ -1,22 +1,25 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { useParams } from 'next/navigation';
 import Footer from "../../../components/Footer";
 
+type NewsItem = { title?: string; url?: string; value?: string; summary?: string; description?: string; body?: string; source?: string };
+
 /* Client-side hydrated news detail (demo): tries window cache then /api/newsai */
-export default function NewsDetail({ params }: any) {
-  const slug = String(params?.slug || "");
-  const [item, setItem] = useState<Record<string, any> | null>(null);
+export default function NewsDetail() {
+  const params = useParams() as { slug?: string | string[] | undefined } | undefined;
+  const slug = String((params && params.slug) ? (Array.isArray(params.slug) ? params.slug.join('/') : params.slug) : "");
+  const [item, setItem] = useState<NewsItem | null>(null);
 
   useEffect(() => {
     try {
-      const latest = (window as any).__newsai_latest_results as any[] | undefined;
+      const latest = (window as unknown as { __newsai_latest_results?: NewsItem[] }).__newsai_latest_results;
       if (latest && latest.length) {
-  const found = latest.find((r: any) => ((r.title || r.url || r.value || "") + "").toString().toLowerCase().includes(decodeURIComponent(slug).replace(/-/g, " ").toLowerCase()));
+        const found = latest.find((r) => ((r.title || r.url || r.value || "") + "").toString().toLowerCase().includes(decodeURIComponent(slug).replace(/-/g, " ").toLowerCase()));
         if (found) { setItem(found); return; }
       }
-    } catch (e) {
+    } catch {
       // ignore
     }
 
@@ -25,8 +28,8 @@ export default function NewsDetail({ params }: any) {
         const res = await fetch('/api/newsai');
         if (!res.ok) return;
         const json = await res.json();
-        const arr = json.articles || [];
-        const found = arr.find((a: any) => ((a.title || '') + '').toString().toLowerCase().includes(decodeURIComponent(slug).replace(/-/g, ' ').toLowerCase()));
+  const arr: NewsItem[] = json.articles || [];
+  const found = arr.find((a) => ((a.title || '') + '').toString().toLowerCase().includes(decodeURIComponent(slug).replace(/-/g, ' ').toLowerCase()));
         if (found) setItem(found);
       } catch {
         // ignore

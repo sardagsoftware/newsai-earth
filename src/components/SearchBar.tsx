@@ -37,13 +37,13 @@ export default function SearchBar({ onResultAction }: { onResultAction?: ResultH
     r.onresult = (ev) => {
       // results shape is implementation-defined, string extraction may vary
       try {
-        const maybe = ev as unknown as { results?: ArrayLike<unknown> };
+  const maybe = ev as unknown as { results?: ArrayLike<unknown> };
         const first = maybe.results?.[0] as unknown;
         // try to access transcript if available (safely navigate nested arrays)
         const transcript = (first as unknown) && (Array.isArray(first) ? (first[0] as unknown as { transcript?: string })?.transcript : undefined);
         if (typeof transcript === "string") setQ((prev) => (prev ? prev + " " + transcript : transcript));
-      } catch (e) {
-        console.warn("speech result parse failed", e);
+      } catch (_err: unknown) {
+        console.warn("speech result parse failed", _err);
       }
     };
     r.onend = () => setRecording(false);
@@ -56,11 +56,11 @@ export default function SearchBar({ onResultAction }: { onResultAction?: ResultH
       recognitionRef.current.stop();
       setRecording(false);
     } else {
-  try {
+      try {
         recognitionRef.current.start();
         setRecording(true);
-      } catch (e) {
-        console.warn("speech start failed", e);
+      } catch (_err: unknown) {
+        console.warn("speech start failed", _err);
       }
     }
   }

@@ -1,6 +1,4 @@
-import type { NextRequest } from "next/server";
-
-export async function GET(req: NextRequest) {
+export async function GET() {
   const key = process.env.OPENAI_API_KEY || process.env.OPENAI_KEY;
   if (!key) {
     return new Response(JSON.stringify({ error: 'OPENAI_API_KEY not set in environment' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
@@ -14,11 +12,11 @@ export async function GET(req: NextRequest) {
       },
       body: JSON.stringify({ model: 'text-embedding-3-small', input: 'ping' }),
     });
-    const text = await r.text();
-    let json: unknown | null = null;
-    try { json = text ? JSON.parse(text) : null; } catch (e) { json = null; }
+  const text = await r.text();
+  let json: unknown | null = null;
+  try { json = text ? JSON.parse(text) : null; } catch { json = null; }
     return new Response(JSON.stringify({ ok: r.ok, status: r.status, statusText: r.statusText, bodyText: (text || '').slice(0,2000), bodyJson: json }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-  } catch (e) {
+  } catch (e: unknown) {
     return new Response(JSON.stringify({ error: String(e), stack: e instanceof Error ? e.stack : null }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 }
