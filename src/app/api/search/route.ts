@@ -252,7 +252,10 @@ export async function POST(req: NextRequest) {
           logError('internal.call', { path: m.path, err });
           r = null;
         }
-        if (!r) r = await fetchWithDebug(target, { method: "POST", body: fd }, 'module-multipart');
+        if (!r) {
+          // Avoid performing outbound fetches from serverless runtime; prefer internal handlers.
+          r = { ok: false, error: 'internal-handler-missing', attemptedUrl: target } as Record<string, unknown>;
+        }
         const o = asRecord(r);
         const txt = getPreview(o, 1000);
         if (o.ok === true) {
@@ -295,7 +298,10 @@ export async function POST(req: NextRequest) {
           logError('internal.call', { path: m.path, err });
           r = null;
         }
-        if (!r) r = await fetchWithDebug(`${target}?q=${encodeURIComponent(q)}`, undefined, 'module-get');
+        if (!r) {
+          // Avoid outbound fetch; signal missing internal handler
+          r = { ok: false, error: 'internal-handler-missing', attemptedUrl: `${target}?q=${encodeURIComponent(q)}` } as Record<string, unknown>;
+        }
         const o = asRecord(r);
         const txt = getPreview(o, 1000);
         if (o.ok === true) {
@@ -307,13 +313,9 @@ export async function POST(req: NextRequest) {
             const fallback = target.startsWith(base) ? null : makeTarget(m.path);
             if (fallback) {
               fallbackTried = true;
-              const r2 = await fetchWithDebug(`${fallback}?q=${encodeURIComponent(q)}`, undefined, 'module-get-fallback');
-              const o2 = asRecord(r2);
-              const txt2 = getPreview(o2, 1000);
-              if (o2.ok === true) {
-                settled.push({ module: m.name, attemptedUrl: `${fallback}?q=${encodeURIComponent(q)}`, payload: o2.json ?? o2.text, debug: { status: o2.status ?? 0, text: txt2, fallback: true } });
-                continue;
-              }
+              // do not perform outbound fetch; report fallback attempted but not executed
+              settled.push({ module: m.name, attemptedUrl: `${fallback}?q=${encodeURIComponent(q)}`, error: 'fallback-not-performed-no-egress', fallback: true });
+              continue;
             }
           } catch (e: unknown) {
             logError('module.fallback', e);
