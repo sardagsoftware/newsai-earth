@@ -95,25 +95,7 @@ export default function ResultsHost() {
   }, [searchParams]);
 
   return (
-    <div>
-      {/* High-visibility debug banner to prove results rendered in DOM */}
-      {Array.isArray(results) && results.length > 0 && (
-        <div className="fixed top-4 right-4 z-50 px-3 py-2 bg-red-600 text-white rounded shadow-lg opacity-95">
-          <div className="text-xs font-semibold">DEBUG VISIBLE</div>
-          <div className="text-sm">Sonuç: {results.length}</div>
-          <div className="text-xs opacity-90 mt-1">
-            {(() => {
-              const first = results[0];
-              if (!first) return null;
-              if (typeof first === 'object' && first !== null) {
-                const rec = first as Record<string, unknown>;
-                if (typeof rec.focused === 'string' && rec.focused) return rec.focused;
-              }
-              try { return JSON.stringify(first).slice(0, 60); } catch { return null; }
-            })()}
-          </div>
-        </div>
-      )}
+  <div>
       <div className="flex items-center justify-between mb-2">
         <div />
         {Array.isArray(results) && results.length > 0 && (

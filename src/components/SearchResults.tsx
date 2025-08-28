@@ -64,7 +64,7 @@ export default function SearchResults({ results }: { results: unknown[] }) {
               >
                 <div className="flex flex-col h-full">
                   <div className="flex-1">
-                    <h3 className="text-sm sm:text-base font-semibold text-gray-100 mb-1">
+                    <h3 className="text-sm sm:text-base font-semibold text-white mb-1">
                       {url ? (
                         <a href={url} target="_blank" rel="noopener noreferrer" className="underline hover:text-white" onClick={(e) => e.stopPropagation()}>
                           {focused ?? '(Başlık yok)'}
@@ -80,7 +80,7 @@ export default function SearchResults({ results }: { results: unknown[] }) {
             <Image src={String(image)} alt={String(focused ?? 'resim').slice(0,50)} width={600} height={216} className="object-cover w-full h-full" unoptimized />
                       </div>
                     ) : null}
-          {focused ? <p className="text-sm text-gray-200">{focused}</p> : <p className="text-sm text-gray-400">(İçerik yok)</p>}
+          {focused ? <p className="text-sm text-gray-100">{focused}</p> : <p className="text-sm text-gray-400">(İçerik yok)</p>}
                   </div>
 
                     <div className="mt-3 flex items-center justify-between">
