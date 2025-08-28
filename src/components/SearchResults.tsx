@@ -21,10 +21,24 @@ export default function SearchResults({ results }: { results: unknown[] }) {
       .filter((it) => typeof it.focused === 'string' && it.focused.trim());
   }, [results]);
 
+  // debug: log normalized length so we can see in console if results were processed
+  try { console.info('[SearchResults] normalized length:', Array.isArray(normalized) ? normalized.length : 0); } catch {}
+
   const total = normalized.length;
   const visible = useMemo(() => normalized.slice(0, visibleCount), [normalized, visibleCount]);
 
-  if (!normalized || normalized.length === 0) return null;
+  if (!normalized || normalized.length === 0) {
+    // Render a small debug panel so users can see what's going on when no cards render
+    return (
+      <div className="w-full mt-6">
+        <div className="max-w-6xl mx-auto p-4 rounded bg-black/30 text-sm text-gray-200">
+          <div className="font-semibold mb-2">Debug: no normalized results</div>
+          <div>Raw results prop length: {(Array.isArray(results) && results.length) || (results ? 1 : 0)}</div>
+          <div className="mt-2 text-xs break-words">Sample: {JSON.stringify(Array.isArray(results) ? results.slice(0,3) : results)}</div>
+        </div>
+      </div>
+    );
+  }
 
   function toggleExpand(i: number) {
     setExpanded((prev) => (prev === i ? null : i));
