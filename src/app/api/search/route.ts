@@ -1,6 +1,13 @@
 import type { NextRequest } from "next/server";
 // import newsai handler for internal short-circuit debug
 import { GET as newsaiGET } from "../newsai/route";
+import { GET as agricultureGET } from "../agricultureai/route";
+import { GET as climateGET } from "../climateai/route";
+import { GET as elementsGET } from "../elementsai/route";
+import { GET as chemistryGET } from "../chemistryai/route";
+import { GET as biologyGET } from "../biologyai/route";
+import { GET as historyGET } from "../historyai/route";
+import { GET as decisionsGET } from "../decisions/route";
 import OpenAI from "openai";
 import { upsertToPinecone } from "../../../lib/pinecone";
 
@@ -56,6 +63,21 @@ async function fetchWithDebug(url: string, options?: RequestInit, tag?: string) 
       out.error = 'fetch-error-serialize-failed';
     }
     return out;
+  }
+}
+
+function asRecord(x: unknown): Record<string, unknown> {
+  return (x as Record<string, unknown>) ?? {};
+}
+
+function getPreview(obj: unknown, max = 1000) {
+  try {
+    const o = asRecord(obj);
+    if (typeof o.text === 'string') return (o.text as string).slice(0, max);
+    if (typeof o.json === 'string') return (o.json as string).slice(0, max);
+    return JSON.stringify(o.json ?? o.text ?? o).slice(0, max);
+  } catch {
+    return '';
   }
 }
 
@@ -176,23 +198,65 @@ export async function POST(req: NextRequest) {
   for (const m of modules) {
   try {
       const target = makeTarget(m.path);
-      if (formData && (m.path === "/api/newsai" || m.path === "/api/decisions")) {
+  if (formData && (m.path === "/api/newsai" || m.path === "/api/decisions")) {
         const fd = new FormData();
         fd.append("q", q);
         for (const f of formData.getAll("images")) fd.append("images", f as unknown as Blob);
         for (const f of formData.getAll("files")) fd.append("files", f as unknown as Blob);
-        const r = await fetchWithDebug(target, { method: "POST", body: fd }, 'module-multipart');
-        const txt = typeof (r as any).text === 'string' ? (r as any).text : JSON.stringify((r as any).text ?? (r as any).json ?? {}).slice(0, 1000);
-        if ((r as any).ok) {
-          settled.push({ module: m.name, attemptedUrl: target, payload: (r as any).json ?? (r as any).text, debug: { status: (r as any).status ?? 0, text: txt } });
+  // Prefer internal handler call when available to avoid network fetch
+  let r: unknown = null;
+        try {
+          if (m.path === '/api/newsai') {
+            const fakeReq = new Request(`${target}`, { method: 'GET' });
+            r = await newsaiGET(fakeReq);
+          } else if (m.path === '/api/decisions') {
+            const fakeReq = new Request(`${target}`, { method: 'GET' });
+            r = await decisionsGET(fakeReq as Request);
+          }
+        } catch (err) {
+          logError('internal.call', { path: m.path, err });
+          r = null;
+        }
+        if (!r) r = await fetchWithDebug(target, { method: "POST", body: fd }, 'module-multipart');
+        const o = asRecord(r);
+        const txt = getPreview(o, 1000);
+        if (o.ok === true) {
+          settled.push({ module: m.name, attemptedUrl: target, payload: o.json ?? o.text, debug: { status: o.status ?? 0, text: txt } });
         } else {
-          settled.push({ module: m.name, attemptedUrl: target, error: (r as any).error ?? 'fetch-failed', status: (r as any).status ?? 0, textPreview: txt });
+          settled.push({ module: m.name, attemptedUrl: target, error: o.error ?? 'fetch-failed', status: o.status ?? 0, textPreview: txt });
         }
       } else {
-        const r = await fetchWithDebug(`${target}?q=${encodeURIComponent(q)}`, undefined, 'module-get');
-        const txt = typeof (r as any).text === 'string' ? (r as any).text : JSON.stringify((r as any).text ?? (r as any).json ?? {}).slice(0, 1000);
-        if ((r as any).ok) {
-          settled.push({ module: m.name, attemptedUrl: `${target}?q=${encodeURIComponent(q)}`, payload: (r as any).json ?? (r as any).text, debug: { status: (r as any).status ?? 0, text: txt } });
+  // Try an internal handler first if available
+  let r: unknown = null;
+        try {
+          if (m.path === '/api/newsai') {
+            const fakeReq = new Request(`${target}?q=${encodeURIComponent(q)}`);
+            r = await newsaiGET(fakeReq as Request);
+          } else if (m.path === '/api/agricultureai') {
+            r = await agricultureGET();
+          } else if (m.path === '/api/climateai') {
+            r = await climateGET();
+          } else if (m.path === '/api/elementsai') {
+            r = await elementsGET();
+          } else if (m.path === '/api/chemistryai') {
+            r = await chemistryGET();
+          } else if (m.path === '/api/biologyai') {
+            r = await biologyGET();
+          } else if (m.path === '/api/historyai') {
+            r = await historyGET();
+          } else if (m.path === '/api/decisions') {
+            const fakeReq = new Request(`${target}?q=${encodeURIComponent(q)}`);
+            r = await decisionsGET(fakeReq as Request);
+          }
+        } catch (err) {
+          logError('internal.call', { path: m.path, err });
+          r = null;
+        }
+        if (!r) r = await fetchWithDebug(`${target}?q=${encodeURIComponent(q)}`, undefined, 'module-get');
+        const o = asRecord(r);
+        const txt = getPreview(o, 1000);
+        if (o.ok === true) {
+          settled.push({ module: m.name, attemptedUrl: `${target}?q=${encodeURIComponent(q)}`, payload: o.json ?? o.text, debug: { status: o.status ?? 0, text: txt } });
         } else {
           // try a simple fallback: if target didn't include base (unlikely), try with base + original path
           let fallbackTried = false;
@@ -201,16 +265,17 @@ export async function POST(req: NextRequest) {
             if (fallback) {
               fallbackTried = true;
               const r2 = await fetchWithDebug(`${fallback}?q=${encodeURIComponent(q)}`, undefined, 'module-get-fallback');
-              const txt2 = typeof (r2 as any).text === 'string' ? (r2 as any).text : JSON.stringify((r2 as any).text ?? (r2 as any).json ?? {}).slice(0, 1000);
-              if ((r2 as any).ok) {
-                settled.push({ module: m.name, attemptedUrl: `${fallback}?q=${encodeURIComponent(q)}`, payload: (r2 as any).json ?? (r2 as any).text, debug: { status: (r2 as any).status ?? 0, text: txt2, fallback: true } });
+              const o2 = asRecord(r2);
+              const txt2 = getPreview(o2, 1000);
+              if (o2.ok === true) {
+                settled.push({ module: m.name, attemptedUrl: `${fallback}?q=${encodeURIComponent(q)}`, payload: o2.json ?? o2.text, debug: { status: o2.status ?? 0, text: txt2, fallback: true } });
                 continue;
               }
             }
           } catch (e) {
             logError('module.fallback', e);
           }
-          settled.push({ module: m.name, attemptedUrl: `${target}?q=${encodeURIComponent(q)}`, error: (r as any).error ?? 'fetch-failed', status: (r as any).status ?? 0, textPreview: txt, fallbackAttempted: fallbackTried });
+          settled.push({ module: m.name, attemptedUrl: `${target}?q=${encodeURIComponent(q)}`, error: o.error ?? 'fetch-failed', status: o.status ?? 0, textPreview: txt, fallbackAttempted: fallbackTried });
         }
       }
     } catch (_e: unknown) {
@@ -359,14 +424,23 @@ export async function POST(req: NextRequest) {
               body: JSON.stringify(hfBody),
             }, 'hf-rerank');
             if (!hfResp.ok) {
-              const hfTextPreview = typeof (hfResp as any).text === 'string' ? (hfResp as any).text.slice(0,1000) : JSON.stringify((hfResp as any).text ?? (hfResp as any).json ?? {}).slice(0,1000);
-              logError('hf.rerank.http', { status: hfResp.status, textPreview: hfTextPreview });
+              const hfObj = asRecord(hfResp);
+              const hfTextPreview = getPreview(hfObj, 1000);
+              logError('hf.rerank.http', { status: hfObj.status ?? hfResp.status, textPreview: hfTextPreview });
               if (hfResp.status === 404 && hfEndpointUrl === hfModelUrl) {
                 console.warn('Model-level inference returned 404. Consider creating a Hugging Face Inference Endpoint for DeepSeek and set HF_ENDPOINT to its URL.');
               }
             }
             if (hfResp.ok) {
-              const hfJson = hfResp.json ?? (hfResp.text ? JSON.parse(String(hfResp.text)) : undefined);
+              const hfObj = asRecord(hfResp);
+              let hfJson: unknown = hfObj.json ?? undefined;
+              if (!hfJson && typeof hfObj.text === 'string') {
+                try {
+                  hfJson = JSON.parse(String(hfObj.text));
+                } catch {
+                  hfJson = undefined;
+                }
+              }
               // Expecting hfJson.scores or array of numbers; adapt safely
               let scores: number[] = [];
               if (Array.isArray(hfJson)) {
