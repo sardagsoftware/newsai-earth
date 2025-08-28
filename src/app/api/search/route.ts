@@ -18,7 +18,7 @@ function getOpenAI(): OpenAI | null {
     if (!process.env.OPENAI_API_KEY) return null;
     _openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     return _openaiClient;
-  } catch (e) {
+  } catch (e: unknown) {
     // don't throw during build if key missing or constructor fails; log and return null
     console.warn('getOpenAI init failed', e);
     return null;
@@ -32,7 +32,7 @@ function logError(tag: string, e: unknown) {
     } else {
       console.error(`[${tag}]`, JSON.stringify(e));
     }
-  } catch (err) {
+  } catch (err: unknown) {
     console.error(`[${tag}] error serializing error`, err);
   }
 }
@@ -59,7 +59,7 @@ async function fetchWithDebug(url: string, options?: RequestInit, tag?: string) 
       } else {
         out.error = String(err);
       }
-    } catch (e) {
+    } catch (_e: unknown) {
       out.error = 'fetch-error-serialize-failed';
     }
     return out;
@@ -84,16 +84,16 @@ function getPreview(obj: unknown, max = 1000) {
 async function normalizeResponse(r: unknown) {
   try {
     // If it's a standard Response, extract fields
-    if (typeof r === 'object' && r !== null && (r as any).text !== undefined && (r as any).status !== undefined) {
+  if (typeof r === 'object' && r !== null && 'text' in (r as Record<string, unknown>) && 'status' in (r as Record<string, unknown>)) {
       // treat as Response-like
       try {
         const resp = r as unknown as Response;
-        const status = (resp as any).status ?? 0;
-        const statusText = (resp as any).statusText ?? '';
+  const status = (resp as Response).status ?? 0;
+  const statusText = (resp as Response).statusText ?? '';
         let text = '';
         try {
           text = await resp.text();
-        } catch {
+        } catch (_e: unknown) {
           // ignore
         }
         let json: unknown = undefined;
@@ -104,7 +104,7 @@ async function normalizeResponse(r: unknown) {
         }
         const ok = status >= 200 && status < 300;
         return { ok, status, statusText, text, json } as Record<string, unknown>;
-      } catch (e) {
+      } catch (_e: unknown) {
         return asRecord(r);
       }
     }
@@ -248,7 +248,7 @@ export async function POST(req: NextRequest) {
             const rr = await decisionsGET(fakeReq as Request);
             r = await normalizeResponse(rr);
           }
-        } catch (err) {
+        } catch (err: unknown) {
           logError('internal.call', { path: m.path, err });
           r = null;
         }
@@ -291,7 +291,7 @@ export async function POST(req: NextRequest) {
             const rr = await decisionsGET(fakeReq as Request);
             r = await normalizeResponse(rr);
           }
-        } catch (err) {
+        } catch (err: unknown) {
           logError('internal.call', { path: m.path, err });
           r = null;
         }
@@ -315,7 +315,7 @@ export async function POST(req: NextRequest) {
                 continue;
               }
             }
-          } catch (e) {
+          } catch (e: unknown) {
             logError('module.fallback', e);
           }
           settled.push({ module: m.name, attemptedUrl: `${target}?q=${encodeURIComponent(q)}`, error: o.error ?? 'fetch-failed', status: o.status ?? 0, textPreview: txt, fallbackAttempted: fallbackTried });
@@ -429,7 +429,7 @@ export async function POST(req: NextRequest) {
         let resEmbeddings: number[][] = [];
         try {
           resEmbeddings = await embedTexts(texts);
-        } catch (e) {
+        } catch (e: unknown) {
           logError('embedTexts', e);
         }
         // optionally upsert embeddings into Pinecone for faster future queries
@@ -437,7 +437,7 @@ export async function POST(req: NextRequest) {
           try {
             const vectors = resEmbeddings.map((v, i) => ({ id: `search-${Date.now()}-${i}`, values: v, metadata: { title: results[i].title, source: results[i].source } }));
             await upsertToPinecone('newsai-index', vectors);
-          } catch (e) {
+          } catch (e: unknown) {
             logError('pinecone.upsert', e);
           }
         }
