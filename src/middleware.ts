@@ -19,8 +19,8 @@ export function middleware(request: NextRequest) {
   const nonce = Buffer.from(String(Math.random())).toString('base64').replace(/=+$/g, '');
   // CSP: allow self and nonce for scripts. We removed 'unsafe-inline' for scripts to harden policy.
   // Keep 'unsafe-inline' for styles temporarily because some third-party CSS may inject inline styles.
-  // Allow openweathermap icons to be loaded; avoid opening img-src to all https: unless necessary
-  const csp = `default-src 'self'; img-src 'self' data: https://openweathermap.org; script-src 'self' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; frame-ancestors 'none'`;
+  // Allow openweathermap icons to be loaded (including subdomains); avoid opening img-src to all https: unless necessary
+  const csp = `default-src 'self'; img-src 'self' data: https://openweathermap.org https://*.openweathermap.org; script-src 'self' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; frame-ancestors 'none'`;
   response.headers.set('Content-Security-Policy', csp);
   // expose nonce to server components via cookie (not HttpOnly so SSR can read via cookies())
   response.cookies.set('csp-nonce', nonce, { path: '/', sameSite: 'lax' });
