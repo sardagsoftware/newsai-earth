@@ -381,7 +381,7 @@ export async function POST(req: NextRequest) {
     // Also support force_debug to return the full settled payload when present in query or body
   const headerForce = req.headers.get('x-force-debug') === '1' || req.headers.get('x-force-debug') === 'true';
   const forceDebugFlag = reqUrl.searchParams.get('force_debug') === '1' || headerForce || bodyForce || pingForce;
-  if (verboseDebug || forceDebugFlag) {
+    if (verboseDebug || forceDebugFlag) {
       // limit text sizes to avoid huge responses
       const limited = settled.map((it) => {
   try {
@@ -399,7 +399,38 @@ export async function POST(req: NextRequest) {
           return { error: 'serialize-failed' };
         }
       });
-      return new Response(JSON.stringify({ results: [], settled: limited, fetchErrors, debugBase: base }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+
+      // Flatten settled payloads into a usable results[] for debug consumers
+      const debugFlat: unknown[] = [];
+      try {
+        for (const s of limited) {
+          try {
+            const payload = (s && typeof s === 'object' && 'payload' in (s as Record<string, unknown>)) ? (s as Record<string, unknown>).payload : s;
+            if (payload && typeof payload === 'object') {
+              const p = payload as Record<string, unknown> | unknown[];
+              if (Array.isArray(p)) {
+                for (const a of p) debugFlat.push(a);
+              } else if (Array.isArray((p as Record<string, unknown>)['articles'])) {
+                for (const a of (p as Record<string, unknown>)['articles'] as unknown[]) debugFlat.push(a);
+              } else {
+                debugFlat.push(p);
+              }
+            } else {
+              debugFlat.push(payload);
+            }
+          } catch {}
+        }
+      } catch {}
+
+      // shape to focused for easier client consumption
+      let debugResults: unknown[] = [];
+      try {
+        if (debugFlat.length > 0) {
+          debugResults = shapeResultsToFocused(debugFlat as unknown[]);
+        }
+      } catch {}
+
+      return new Response(JSON.stringify({ results: debugResults, settled: limited, fetchErrors, debugBase: base }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
 
     // Flatten, tag with source, dedupe and limit

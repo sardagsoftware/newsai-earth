@@ -20,7 +20,41 @@ export default function Home() {
               try {
                 // DEBUG: trace incoming result payload from /api/search
                 try { console.debug('[SearchBar] onResultAction payload:', res); } catch {}
-                const r = (res as unknown as Record<string, unknown>)?.results ?? (Array.isArray(res) ? res : null);
+
+                // Try to use explicit results array if provided
+                const asObj = res as unknown as Record<string, unknown>;
+                let r = asObj?.results ?? (Array.isArray(res) ? res : null);
+
+                // If the server returned a `settled` array (module payloads), flatten it into a results[]
+                try {
+                  if ((!r || (Array.isArray(r) && r.length === 0)) && Array.isArray(asObj?.settled)) {
+                    const flat: unknown[] = [];
+                    for (const s of (asObj.settled as unknown[])) {
+                      try {
+                        if (!s || typeof s !== 'object') { flat.push(s); continue; }
+                        const payload = (s as Record<string, unknown>).payload ?? s;
+                        if (payload && typeof payload === 'object') {
+                          if (Array.isArray((payload as any).articles)) {
+                            for (const a of (payload as any).articles) flat.push(a);
+                          } else if (Array.isArray(payload)) {
+                            for (const a of (payload as any)) flat.push(a);
+                          } else {
+                            flat.push(payload);
+                          }
+                        } else {
+                          flat.push(payload);
+                        }
+                      } catch (e) {
+                        // ignore per-item flatten errors
+                      }
+                    }
+                    if (flat.length > 0) {
+                      try { console.debug('[SearchBar] flattened settled -> results count', flat.length); } catch {}
+                      r = flat;
+                    }
+                  }
+                } catch {}
+
                 (window as unknown as Record<string, unknown>).__newsai_latest_results = r as unknown;
                 const ev = new CustomEvent("newsai:results", { detail: r });
                 window.dispatchEvent(ev);
