@@ -16,15 +16,15 @@ function pickLocale(lang?: string) {
 export default function LocaleSetter() {
   useEffect(() => {
     try {
-      const nav = typeof navigator !== 'undefined' ? (navigator.language || (navigator as any).userLanguage) : undefined;
+      const nav = typeof navigator !== 'undefined' ? (navigator.language || (navigator as unknown as { userLanguage?: string }).userLanguage) : undefined;
       const chosen = pickLocale(nav);
       // set cookie for server-side reads (30 days)
       document.cookie = `user-locale=${chosen}; Path=/; Max-Age=${60*60*24*30}`;
       // set document lang attribute
       document.documentElement.lang = chosen;
       // expose on document for client components
-      (document as any).userLocale = chosen;
-    } catch (e) {
+      (document as unknown as Record<string, unknown>).userLocale = chosen;
+    } catch {
       // ignore
     }
   }, []);

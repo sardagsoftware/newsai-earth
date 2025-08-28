@@ -18,8 +18,8 @@ export default function SearchBar({ onResultAction }: { onResultAction?: ResultH
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-  // detect user locale from browser and store on document for server-aware parts
-  try { const lang = navigator.language || (navigator as any).userLanguage; (document as any).userLocale = lang; } catch(_){ }
+    // detect user locale from browser and store on document for server-aware parts
+    try { const lang = navigator.language || (navigator as unknown as { userLanguage?: string }).userLanguage; (document as unknown as Record<string, unknown>).userLocale = lang; } catch { }
   const SpeechRecognition = (window as unknown) && ((window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition || (window as unknown as { SpeechRecognition?: unknown }).SpeechRecognition);
     if (!SpeechRecognition) return;
     type Recog = {
@@ -37,16 +37,16 @@ export default function SearchBar({ onResultAction }: { onResultAction?: ResultH
     r.lang = "tr-TR";
     r.interimResults = false;
     r.maxAlternatives = 1;
-    r.onresult = (ev) => {
+    r.onresult = (ev: { results?: ArrayLike<unknown> }) => {
       // results shape is implementation-defined, string extraction may vary
       try {
-  const maybe = ev as unknown as { results?: ArrayLike<unknown> };
+        const maybe = ev as { results?: ArrayLike<unknown> };
         const first = maybe.results?.[0] as unknown;
         // try to access transcript if available (safely navigate nested arrays)
         const transcript = (first as unknown) && (Array.isArray(first) ? (first[0] as unknown as { transcript?: string })?.transcript : undefined);
         if (typeof transcript === "string") setQ((prev) => (prev ? prev + " " + transcript : transcript));
-      } catch (_err: unknown) {
-        console.warn("speech result parse failed", _err);
+      } catch {
+        console.warn("speech result parse failed");
       }
     };
     r.onend = () => setRecording(false);

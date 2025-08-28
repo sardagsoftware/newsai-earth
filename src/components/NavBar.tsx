@@ -6,7 +6,19 @@ import Link from "next/link";
 export default function NavBar() {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState<{ name?: string; email?: string } | null>(null);
-  useEffect(() => { fetch('/api/auth/me').then(r => r.json()).then(d => setUser(d.user ?? null)).catch(() => setUser(null)); }, []);
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((r) => r.json())
+      .then((d: unknown) => {
+        try {
+          const obj = d as Record<string, unknown>;
+          setUser((obj.user as {name?:string;email?:string}) ?? null);
+        } catch {
+          setUser(null);
+        }
+      })
+      .catch(() => setUser(null));
+  }, []);
 
   return (
     <header className="w-full py-3 border-b border-gray-800 backdrop-blur-sm bg-black/40">
@@ -28,7 +40,7 @@ export default function NavBar() {
         </button>
 
         <nav className={`hidden md:flex items-center gap-3 text-sm ${open ? 'block' : ''}`}>
-          <a href="/decisions" className="btn btn-gradient">{t('decisions', typeof document !== 'undefined' ? (document as any).userLocale : undefined)}</a>
+          <a href="/decisions" className="btn btn-gradient">{t('decisions', typeof document !== 'undefined' ? (document as unknown as Record<string, unknown>).userLocale as string | undefined : undefined)}</a>
           <a href="/about" className="btn">Hakkında</a>
           <a href="/contact" className="btn">İletişim</a>
           {!user ? (

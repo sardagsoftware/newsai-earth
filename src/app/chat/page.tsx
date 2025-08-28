@@ -13,13 +13,13 @@ function loadState() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { sessions: [] as {id:string;title:string}[], messages: {} as Record<string, Msg[]> };
     return JSON.parse(raw);
-  } catch (e) {
+  } catch {
     return { sessions: [] as {id:string;title:string}[], messages: {} as Record<string, Msg[]> };
   }
 }
 
-function saveState(state: any) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
+function saveState(state: unknown) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch { /* ignore */ }
 }
 
 export default function ChatPage() {
@@ -83,8 +83,9 @@ export default function ChatPage() {
         const assistantMsg: Msg = { id: `m-${Date.now()+2}`, role: 'assistant', text: `Sunucudan beklenmeyen cevap: ${txt.slice(0,400)}` };
         setMessages(prev => ({ ...prev, [id]: [...(prev[id] || []), assistantMsg] }));
       }
-    } catch (err:any) {
-      const assistantMsg: Msg = { id: `m-${Date.now()+3}`, role: 'assistant', text: `İstek sırasında hata: ${err?.message ?? String(err)}` };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      const assistantMsg: Msg = { id: `m-${Date.now()+3}`, role: 'assistant', text: `İstek sırasında hata: ${message}` };
       setMessages(prev => ({ ...prev, [id]: [...(prev[id] || []), assistantMsg] }));
     } finally {
       setSending(false);
@@ -103,7 +104,7 @@ export default function ChatPage() {
               <div className="text-sm text-gray-400">Yeni sohbete hoş geldiniz — sorularınızı yazın.</div>
             )
           ) : (
-            <div className="text-sm text-gray-400">Sol üstte "Yeni" butonuyla bir sohbet başlatın.</div>
+            <div className="text-sm text-gray-400">Sol üstte &quot;Yeni&quot; butonuyla bir sohbet başlatın.</div>
           )}
         </div>
 
