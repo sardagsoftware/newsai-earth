@@ -13,8 +13,8 @@ export async function upsertToPinecone(indexName: string, vectors: Array<{ id: s
       },
       body: JSON.stringify(body),
     });
-  } catch (e) {
-    console.warn('pinecone upsert failed', e);
+  } catch (_err: unknown) {
+    console.warn('pinecone upsert failed', _err);
   }
 }
 
@@ -26,8 +26,8 @@ export async function queryPinecone(url: string, apiKey: string, queryVector: nu
       body: JSON.stringify({ vector: queryVector, topK }),
     });
     return await resp.json();
-  } catch (e) {
-    console.warn('pinecone query failed', e);
+  } catch (_err: unknown) {
+    console.warn('pinecone query failed', _err);
     return null;
   }
 }

@@ -1,5 +1,6 @@
 import "../globals.css";
 import NavBar from "../components/NavBar";
+import Footer from "../components/Footer";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { cookies } from 'next/headers';
@@ -61,13 +62,16 @@ export default async function RootLayout({
         {nonce ? <meta name="csp-nonce" content={nonce} /> : null}
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        style={{ background: '#18181b', color: '#ededed', minHeight: '100vh', margin: 0 }}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#18181b] text-[#ededed] min-h-screen m-0`}
       >
         <NavBar />
-        <div className="mt-4">
+        <main className="mt-4">
           {children}
-        </div>
+        </main>
+        <Footer />
+        <noscript>
+          <div style={{padding:16,background:'#111',color:'#fff',textAlign:'center'}}>JavaScript kapalı — bazı özellikler çalışmayabilir.</div>
+        </noscript>
       </body>
     </html>
   );

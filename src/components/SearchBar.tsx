@@ -37,13 +37,13 @@ export default function SearchBar({ onResultAction }: { onResultAction?: ResultH
     r.onresult = (ev) => {
       // results shape is implementation-defined, string extraction may vary
       try {
-        const maybe = ev as unknown as { results?: ArrayLike<unknown> };
+  const maybe = ev as unknown as { results?: ArrayLike<unknown> };
         const first = maybe.results?.[0] as unknown;
         // try to access transcript if available (safely navigate nested arrays)
         const transcript = (first as unknown) && (Array.isArray(first) ? (first[0] as unknown as { transcript?: string })?.transcript : undefined);
         if (typeof transcript === "string") setQ((prev) => (prev ? prev + " " + transcript : transcript));
-      } catch (e) {
-        console.warn("speech result parse failed", e);
+      } catch (_err: unknown) {
+        console.warn("speech result parse failed", _err);
       }
     };
     r.onend = () => setRecording(false);
@@ -56,11 +56,11 @@ export default function SearchBar({ onResultAction }: { onResultAction?: ResultH
       recognitionRef.current.stop();
       setRecording(false);
     } else {
-  try {
+      try {
         recognitionRef.current.start();
         setRecording(true);
-      } catch (e) {
-        console.warn("speech start failed", e);
+      } catch (_err: unknown) {
+        console.warn("speech start failed", _err);
       }
     }
   }
@@ -111,24 +111,24 @@ export default function SearchBar({ onResultAction }: { onResultAction?: ResultH
   }
 
   return (
-    <div className="w-full search-container">
+    <div className="w-full search-container px-4 sm:px-0">
       <form onSubmit={submit} className="flex flex-col gap-3">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full">
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Ara: örn. iklim değişikliği, tarım uygulamaları..."
             aria-label="Arama"
-            className="search-input flex-1"
+            className="search-input flex-1 w-full px-4 py-3 rounded bg-[#0b1220] text-white placeholder:text-gray-400"
           />
 
-          <button type="button" onClick={toggleRecord} title="Sesle arama" aria-pressed={recording} className={`icon-btn ${recording ? "recording" : ""}`}>
+          <button type="button" onClick={toggleRecord} title="Sesle arama" aria-pressed={recording} className={`icon-btn ${recording ? "recording" : ""} p-2`}> 
             {recording ? (
-              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className="w-6 h-6 sm:w-7 sm:h-7">
                 <circle cx="12" cy="12" r="6"></circle>
               </svg>
             ) : (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="w-6 h-6 sm:w-7 sm:h-7">
                 <path d="M12 1v11"></path>
                 <path d="M8 11a4 4 0 0 0 8 0"></path>
                 <path d="M19 11v2a7 7 0 0 1-14 0v-2"></path>
@@ -136,21 +136,21 @@ export default function SearchBar({ onResultAction }: { onResultAction?: ResultH
             )}
           </button>
 
-          <button type="submit" disabled={loading} className="icon-btn" aria-busy={loading} data-tooltip="Ara">
+          <button type="submit" disabled={loading} className="icon-btn p-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded" aria-busy={loading} data-tooltip="Ara">
             {loading ? (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin" aria-hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin w-5 h-5" aria-hidden>
                 <path d="M21 12a9 9 0 0 1-9 9"></path>
               </svg>
             ) : (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="w-5 h-5">
                 <circle cx="11" cy="11" r="7"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
               </svg>
             )}
           </button>
           {q && (
-            <button type="button" onClick={() => setQ("")} className="icon-btn" data-tooltip="Temizle" aria-label="Aramayı temizle">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <button type="button" onClick={() => setQ("")} className="icon-btn p-2" data-tooltip="Temizle" aria-label="Aramayı temizle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="w-5 h-5">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
