@@ -18,6 +18,30 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build --if-present || npm run build
+      - name: Check Vercel secrets
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        run: |
+          echo "Checking Vercel secrets visibility (will print present/missing)"
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "VERCEL_TOKEN: MISSING"
+            exit 1
+          else
+            echo "VERCEL_TOKEN: present"
+          fi
+          if [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "VERCEL_PROJECT_ID: MISSING"
+          else
+            echo "VERCEL_PROJECT_ID: present"
+          fi
+          if [ -z "$VERCEL_ORG_ID" ]; then
+            echo "VERCEL_ORG_ID: MISSING (optional)"
+          else
+            echo "VERCEL_ORG_ID: present"
+          fi
+        shell: bash
       - name: Vercel Action
         uses: amondnet/vercel-action@v20
         with:
