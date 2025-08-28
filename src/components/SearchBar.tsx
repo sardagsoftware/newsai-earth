@@ -104,8 +104,40 @@ export default function SearchBar({ onResultAction }: { onResultAction?: ResultH
   let maybeResults: unknown[] | undefined = undefined;
   if (Array.isArray(asObj["results"])) maybeResults = asObj["results"] as unknown[];
   else if (Array.isArray(res)) maybeResults = res as unknown[];
+
+  // Fallback: if results empty but settled array exists, flatten it into results
+  try {
+    if ((!maybeResults || maybeResults.length === 0) && Array.isArray(asObj?.settled)) {
+      const flat: unknown[] = [];
+      for (const s of (asObj.settled as unknown[])) {
+        try {
+          if (!s || typeof s !== 'object') { flat.push(s); continue; }
+          const payload = (s as Record<string, unknown>).payload ?? s;
+          if (payload && typeof payload === 'object') {
+            const pRec = payload as Record<string, unknown>;
+            if (Array.isArray(pRec.articles)) {
+              for (const a of pRec.articles as unknown[]) flat.push(a);
+            } else if (Array.isArray(payload as unknown[])) {
+              for (const a of payload as unknown[]) flat.push(a);
+            } else {
+              flat.push(payload);
+            }
+          } else {
+            flat.push(payload);
+          }
+        } catch {
+          // ignore
+        }
+      }
+      if (flat.length > 0) {
+        maybeResults = flat;
+      }
+    }
+  } catch {}
+
   setResults(maybeResults ?? []);
-  onResultAction?.(res);
+  // dispatch original response for backwards compatibility, but also pass flattened array to handler when available
+  onResultAction?.(maybeResults ?? res);
     } catch (err) {
       console.error(err);
     } finally {
