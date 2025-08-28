@@ -62,8 +62,7 @@ export default async function RootLayout({
         {nonce ? <meta name="csp-nonce" content={nonce} /> : null}
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        style={{ background: '#18181b', color: '#ededed', minHeight: '100vh', margin: 0 }}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#18181b] text-[#ededed] min-h-screen m-0`}
       >
         <NavBar />
         <main className="mt-4">
