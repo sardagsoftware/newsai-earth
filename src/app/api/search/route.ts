@@ -31,8 +31,8 @@ function logError(tag: string, e: unknown) {
 }
 
 async function fetchWithDebug(url: string, options?: RequestInit, tag?: string) {
-    try {
-      const r = await fetch(url, options);
+  try {
+    const r = await fetch(url, options);
     const text = await r.text();
     let json: unknown | undefined;
     try {
@@ -40,10 +40,22 @@ async function fetchWithDebug(url: string, options?: RequestInit, tag?: string) 
     } catch {
       // not JSON
     }
-  return { ok: r.ok, status: r.status, statusText: r.statusText, json, text };
+    return { ok: r.ok, status: r.status, statusText: r.statusText, json, text };
   } catch (err: unknown) {
+    // don't throw; return structured error so callers can include full context in debug responses
     logError(`fetchWithDebug:${tag ?? url}`, err);
-    throw err;
+    const out: Record<string, unknown> = { ok: false, status: 0, statusText: 'fetch-failed' };
+    try {
+      if (err instanceof Error) {
+        out.error = err.message;
+        out.stack = err.stack;
+      } else {
+        out.error = String(err);
+      }
+    } catch (e) {
+      out.error = 'fetch-error-serialize-failed';
+    }
+    return out;
   }
 }
 
@@ -84,13 +96,18 @@ export async function POST(req: NextRequest) {
     const contentType = req.headers.get("content-type") || "";
     let q = "";
   let formData: FormData | null = null;
+    let bodyForceDebug = false;
     if (contentType.includes("multipart/form-data")) {
-  formData = await req.formData();
-  const qv = formData.get("q");
-  q = typeof qv === "string" ? qv : "";
+      formData = await req.formData();
+      const qv = formData.get("q");
+      q = typeof qv === "string" ? qv : "";
+  const fdFlag = formData.get('force_debug');
+  const fdFlagStr = fdFlag == null ? '' : String(fdFlag).toLowerCase();
+  bodyForceDebug = fdFlagStr === '1' || fdFlagStr === 'true';
     } else {
       const body = await req.json();
       q = body.q || "";
+      bodyForceDebug = body.force_debug === true || body.force_debug === '1' || body.force_debug === 'true';
     }
 
   // Determine base URL robustly: prefer explicit env, then Vercel-provided URL, then request origin, then a safe production fallback.
@@ -98,16 +115,13 @@ export async function POST(req: NextRequest) {
   const safeProdDomain = 'https://newsai-earth.vercel.app';
   const base = process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (reqOrigin || safeProdDomain));
 
-  // Strong debug short-circuit: allow verifying that this deployed function is the latest.
-  // Trigger via POST /api/search?force_debug=1 or by sending q === '__PING__'
+  // Note: do not short-circuit on force_debug here; we want to execute module fetches and then
+  // return the full `settled` array if debug is requested so we can see attemptedUrl and errors.
   try {
-    const _reqUrlForPing = new URL(req.url);
-    const forceDebug = _reqUrlForPing.searchParams.get('force_debug') === '1';
-    if (forceDebug || q === '__PING__') {
-      return new Response(JSON.stringify({ ok: true, debugBase: base, reqOrigin, VERCEL_URL: process.env.VERCEL_URL || null, now: Date.now() }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-    }
+    // parse only to determine later flags
+    new URL(req.url);
   } catch {
-    // ignore URL parse errors for debug
+    // ignore
   }
 
   // Internal handler short-circuit for debugging: call module handlers directly to avoid network fetches
@@ -128,34 +142,77 @@ export async function POST(req: NextRequest) {
     // ignore
   }
     const modules = [
-    { path: `${base}/api/newsai`, name: "Haber & AI" },
-    { path: `${base}/api/climateai`, name: "İklim & AI" },
-    { path: `${base}/api/agricultureai`, name: "Tarım & AI" },
-    { path: `${base}/api/chemistryai`, name: "Kimya & AI" },
-    { path: `${base}/api/biologyai`, name: "Biyoloji & AI" },
-    { path: `${base}/api/elementsai`, name: "Element & Bilim" },
-    { path: `${base}/api/historyai`, name: "Tarih & AI" },
-    { path: `${base}/api/decisions`, name: "Bakanlık Kararları" },
+      { path: `/api/newsai`, name: "Haber & AI" },
+      { path: `/api/climateai`, name: "İklim & AI" },
+      { path: `/api/agricultureai`, name: "Tarım & AI" },
+      { path: `/api/chemistryai`, name: "Kimya & AI" },
+      { path: `/api/biologyai`, name: "Biyoloji & AI" },
+      { path: `/api/elementsai`, name: "Element & Bilim" },
+      { path: `/api/historyai`, name: "Tarih & AI" },
+      { path: `/api/decisions`, name: "Bakanlık Kararları" },
     ];
+
+    // Normalize a path into an absolute URL we can fetch from the server
+    function makeTarget(pathOrUrl: string) {
+      try {
+        // already absolute?
+        const maybe = new URL(pathOrUrl);
+        return maybe.toString();
+      } catch {
+        // relative path -> join with base
+        if (pathOrUrl.startsWith('/')) return `${base}${pathOrUrl}`;
+        return `${base}/${pathOrUrl.replace(/^\/+/, '')}`;
+      }
+    }
 
   const settled: Array<Record<string, unknown>> = [];
   // allow quick verbose debugging from prod: POST /api/search?debug=1
   const reqUrl = new URL(req.url);
   const verboseDebug = reqUrl.searchParams.get('debug') === '1';
+  // Accept force_debug from query OR body/formData OR magic ping query
+  const bodyForce = bodyForceDebug;
+  const pingForce = q === '__PING__';
   // Perform sequential fetches so we can capture the first failure context more clearly in logs
   for (const m of modules) {
   try {
+      const target = makeTarget(m.path);
       if (formData && (m.path === "/api/newsai" || m.path === "/api/decisions")) {
         const fd = new FormData();
         fd.append("q", q);
         for (const f of formData.getAll("images")) fd.append("images", f as unknown as Blob);
         for (const f of formData.getAll("files")) fd.append("files", f as unknown as Blob);
-        const r = await fetchWithDebug(m.path, { method: "POST", body: fd }, 'module-multipart');
-        settled.push({ module: m.name, payload: r.json ?? r.text ?? { status: r.status, ok: r.ok }, debug: { status: r.status, text: (r.text || '').slice(0,1000) } });
-        continue;
+        const r = await fetchWithDebug(target, { method: "POST", body: fd }, 'module-multipart');
+        const txt = typeof (r as any).text === 'string' ? (r as any).text : JSON.stringify((r as any).text ?? (r as any).json ?? {}).slice(0, 1000);
+        if ((r as any).ok) {
+          settled.push({ module: m.name, attemptedUrl: target, payload: (r as any).json ?? (r as any).text, debug: { status: (r as any).status ?? 0, text: txt } });
+        } else {
+          settled.push({ module: m.name, attemptedUrl: target, error: (r as any).error ?? 'fetch-failed', status: (r as any).status ?? 0, textPreview: txt });
+        }
+      } else {
+        const r = await fetchWithDebug(`${target}?q=${encodeURIComponent(q)}`, undefined, 'module-get');
+        const txt = typeof (r as any).text === 'string' ? (r as any).text : JSON.stringify((r as any).text ?? (r as any).json ?? {}).slice(0, 1000);
+        if ((r as any).ok) {
+          settled.push({ module: m.name, attemptedUrl: `${target}?q=${encodeURIComponent(q)}`, payload: (r as any).json ?? (r as any).text, debug: { status: (r as any).status ?? 0, text: txt } });
+        } else {
+          // try a simple fallback: if target didn't include base (unlikely), try with base + original path
+          let fallbackTried = false;
+          try {
+            const fallback = target.startsWith(base) ? null : makeTarget(m.path);
+            if (fallback) {
+              fallbackTried = true;
+              const r2 = await fetchWithDebug(`${fallback}?q=${encodeURIComponent(q)}`, undefined, 'module-get-fallback');
+              const txt2 = typeof (r2 as any).text === 'string' ? (r2 as any).text : JSON.stringify((r2 as any).text ?? (r2 as any).json ?? {}).slice(0, 1000);
+              if ((r2 as any).ok) {
+                settled.push({ module: m.name, attemptedUrl: `${fallback}?q=${encodeURIComponent(q)}`, payload: (r2 as any).json ?? (r2 as any).text, debug: { status: (r2 as any).status ?? 0, text: txt2, fallback: true } });
+                continue;
+              }
+            }
+          } catch (e) {
+            logError('module.fallback', e);
+          }
+          settled.push({ module: m.name, attemptedUrl: `${target}?q=${encodeURIComponent(q)}`, error: (r as any).error ?? 'fetch-failed', status: (r as any).status ?? 0, textPreview: txt, fallbackAttempted: fallbackTried });
+        }
       }
-      const r = await fetchWithDebug(`${m.path}?q=${encodeURIComponent(q)}`, undefined, 'module-get');
-      settled.push({ module: m.name, payload: r.json ?? r.text ?? { status: r.status, ok: r.ok }, debug: { status: r.status, text: (r.text || '').slice(0,1000) } });
     } catch (_e: unknown) {
       // Ensure we capture detailed error info into the settled array so the prod response surfaces it
       const e = _e as unknown;
@@ -167,16 +224,15 @@ export async function POST(req: NextRequest) {
       // keep going to collect other modules but note the failure
     }
 
-  // TEMP DEBUG: immediately return settled to inspect which module fetch failed in prod
-  try {
-    return new Response(JSON.stringify({ settled, debugBase: base }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-  } catch {
-    // fallthrough to normal behavior
-  }
+  // continue loop to collect all modules' responses/errors
   }
 
     // Collect fetch-level errors to return for debugging (temporary)
     const fetchErrors: Array<Record<string, unknown>> = [];
+    // If this is a ping debug request, return the full settled array to help diagnose prod fetch issues
+    if (q === '__PING__') {
+      return new Response(JSON.stringify({ ok: true, settled, debugBase: base }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
     for (const s of settled) {
       if (s && typeof s === 'object' && 'error' in (s as Record<string, unknown>)) {
         const se = s as Record<string, unknown>;
@@ -185,7 +241,10 @@ export async function POST(req: NextRequest) {
     }
 
     // If verbose debug requested, return the raw settled array and fetchErrors for diagnosis
-    if (verboseDebug) {
+    // Also support force_debug to return the full settled payload when present in query or body
+  const headerForce = req.headers.get('x-force-debug') === '1' || req.headers.get('x-force-debug') === 'true';
+  const forceDebugFlag = reqUrl.searchParams.get('force_debug') === '1' || headerForce || bodyForce || pingForce;
+  if (verboseDebug || forceDebugFlag) {
       // limit text sizes to avoid huge responses
       const limited = settled.map((it) => {
   try {
@@ -300,7 +359,8 @@ export async function POST(req: NextRequest) {
               body: JSON.stringify(hfBody),
             }, 'hf-rerank');
             if (!hfResp.ok) {
-              logError('hf.rerank.http', { status: hfResp.status, textPreview: (hfResp.text || '').slice(0, 1000) });
+              const hfTextPreview = typeof (hfResp as any).text === 'string' ? (hfResp as any).text.slice(0,1000) : JSON.stringify((hfResp as any).text ?? (hfResp as any).json ?? {}).slice(0,1000);
+              logError('hf.rerank.http', { status: hfResp.status, textPreview: hfTextPreview });
               if (hfResp.status === 404 && hfEndpointUrl === hfModelUrl) {
                 console.warn('Model-level inference returned 404. Consider creating a Hugging Face Inference Endpoint for DeepSeek and set HF_ENDPOINT to its URL.');
               }
@@ -339,5 +399,21 @@ export async function POST(req: NextRequest) {
   } catch (err: unknown) {
     logError('search.route', err);
     return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: { "Content-Type": "application/json" } });
+  }
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    const reqUrl = new URL(req.url);
+    const forceDebug = reqUrl.searchParams.get('force_debug') === '1';
+    if (forceDebug) {
+      const base = process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://newsai-earth.vercel.app');
+      return new Response(JSON.stringify({ ok: true, debugBase: base, now: Date.now() }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+    // lightweight info for GET
+    return new Response(JSON.stringify({ ok: true, message: 'POST only for search; use POST with JSON { q }', now: Date.now() }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  } catch (err: unknown) {
+    logError('search.GET', err);
+    return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 }
