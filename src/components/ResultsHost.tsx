@@ -101,7 +101,17 @@ export default function ResultsHost() {
         <div className="fixed top-4 right-4 z-50 px-3 py-2 bg-red-600 text-white rounded shadow-lg opacity-95">
           <div className="text-xs font-semibold">DEBUG VISIBLE</div>
           <div className="text-sm">Sonuç: {results.length}</div>
-          <div className="text-xs opacity-90 mt-1">{(results[0] && ( (results[0] as any).focused || JSON.stringify(results[0]).slice(0,60) ))}</div>
+          <div className="text-xs opacity-90 mt-1">
+            {(() => {
+              const first = results[0];
+              if (!first) return null;
+              if (typeof first === 'object' && first !== null) {
+                const rec = first as Record<string, unknown>;
+                if (typeof rec.focused === 'string' && rec.focused) return rec.focused;
+              }
+              try { return JSON.stringify(first).slice(0, 60); } catch { return null; }
+            })()}
+          </div>
         </div>
       )}
       <div className="flex items-center justify-between mb-2">
