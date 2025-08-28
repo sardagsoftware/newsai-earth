@@ -15,7 +15,15 @@ jobs:
         with:
           node-version: '20'
       - name: Install
-        run: npm ci
+        run: |
+          # Use npm ci when a lockfile exists for reproducible installs, otherwise fall back to npm install
+          if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
+            echo "Found lockfile, running npm ci"
+            npm ci
+          else
+            echo "No lockfile found, running npm install"
+            npm install
+          fi
       - name: Build
         run: npm run build --if-present || npm run build
       - name: Check Vercel secrets
@@ -34,9 +42,9 @@ jobs:
             echo "VERCEL_TOKEN: present"
           fi
 
+          # Project and Org IDs are optional. Print presence but do not treat them as blocking failures.
           if [ -z "$VERCEL_PROJECT_ID" ]; then
             echo "VERCEL_PROJECT_ID: MISSING (optional but recommended)"
-            MISSING+=(VERCEL_PROJECT_ID)
           else
             echo "VERCEL_PROJECT_ID: present"
           fi
