@@ -103,6 +103,21 @@ export default function ResultsHost() {
         )}
       </div>
       <SearchResults results={results} />
+      {/* Quick DOM preview for debugging: show first 3 normalized items plainly */}
+      {Array.isArray(results) && results.length > 0 && (
+        <div className="mt-3 p-3 bg-black/20 rounded text-sm text-gray-200">
+          <div className="font-medium mb-2">Hızlı Önizleme (ilk 3)</div>
+          {results.slice(0, 3).map((r, i) => {
+            const it = r as Record<string, unknown>;
+            const focused = (it['focused'] ?? it['summary'] ?? it['title'] ?? it['content'] ?? it['answer']) as string | undefined;
+            return (
+              <div key={i} className="mb-2 border-b border-gray-800 pb-2">
+                <div className="text-sm text-gray-100">{focused ? focused : JSON.stringify(it).slice(0, 200)}</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
       {showDebug && (
         <div className="mt-4">
           <div className="flex items-center gap-2">
