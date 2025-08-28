@@ -149,7 +149,10 @@ export default function SearchBar({ onResultAction }: { onResultAction?: ResultH
     <div className="w-full search-container px-4 sm:px-0">
       <form onSubmit={submit} className="flex flex-col gap-3">
         <div className="flex items-center gap-3 w-full">
+          <label htmlFor="search-q" className="sr-only">Arama</label>
           <input
+            id="search-q"
+            name="q"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Ara: örn. iklim değişikliği, tarım uygulamaları..."
@@ -199,7 +202,7 @@ export default function SearchBar({ onResultAction }: { onResultAction?: ResultH
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="14" rx="2"/><path d="M8 21v-3a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v3"/></svg>
               <span className="sr-only">Görsel yükle</span>
             </div>
-            <input type="file" accept="image/*" onChange={onImageChange} multiple className="hidden" />
+            <input id="search-images" name="images" type="file" accept="image/*" onChange={onImageChange} multiple className="hidden" />
           </label>
 
           <label className="cursor-pointer">
@@ -207,7 +210,7 @@ export default function SearchBar({ onResultAction }: { onResultAction?: ResultH
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/></svg>
               <span className="sr-only">Dosya yükle</span>
             </div>
-            <input type="file" onChange={onFileChange} multiple className="hidden" />
+            <input id="search-files" name="files" type="file" onChange={onFileChange} multiple className="hidden" />
           </label>
 
           <div className="small-chip">{images.length} görsel · {files.length} dosya</div>

@@ -28,9 +28,18 @@ export default function RegisterPage() {
   <form onSubmit={submit} className="w-full max-w-md card-glass p-6 rounded-lg">
         <h2 className="text-2xl font-bold mb-4">Kayıt Ol</h2>
         {error && <div className="text-red-400 mb-2">{error}</div>}
-  <input className="w-full mb-2 p-2 rounded search-input" placeholder="İsim" value={name} onChange={(e) => setName(e.target.value)} />
-  <input className="w-full mb-2 p-2 rounded search-input" placeholder="E-posta" value={email} onChange={(e) => setEmail(e.target.value)} />
-  <input type="password" className="w-full mb-4 p-2 rounded search-input" placeholder="Parola" value={password} onChange={(e) => setPassword(e.target.value)} />
+  <div>
+    <label htmlFor="register-name" className="sr-only">İsim</label>
+    <input id="register-name" name="name" className="w-full mb-2 p-2 rounded search-input" placeholder="İsim" value={name} onChange={(e) => setName(e.target.value)} />
+  </div>
+  <div>
+    <label htmlFor="register-email" className="sr-only">E-posta</label>
+    <input id="register-email" name="email" className="w-full mb-2 p-2 rounded search-input" placeholder="E-posta" value={email} onChange={(e) => setEmail(e.target.value)} />
+  </div>
+  <div>
+    <label htmlFor="register-password" className="sr-only">Parola</label>
+    <input id="register-password" name="password" type="password" className="w-full mb-4 p-2 rounded search-input" placeholder="Parola" value={password} onChange={(e) => setPassword(e.target.value)} />
+  </div>
   <button className="w-full btn btn--primary">Kayıt Ol</button>
   <div className="mt-3 text-sm text-gray-400">Zaten hesabınız var mı? <a href="/login" className="text-blue-400 underline">Giriş yapın</a></div>
       </form>

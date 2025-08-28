@@ -56,9 +56,19 @@ export default function Home() {
                   }
                 } catch {}
 
+                // store global cache
                 (window as unknown as Record<string, unknown>).__newsai_latest_results = r as unknown;
-                const ev = new CustomEvent("newsai:results", { detail: r });
-                window.dispatchEvent(ev);
+                // Dispatch after a microtask to avoid race where ResultsHost hasn't mounted yet
+                try {
+                  setTimeout(() => {
+                    const ev = new CustomEvent("newsai:results", { detail: r });
+                    try { console.debug('[SearchBar] dispatching newsai:results (delayed) count:', Array.isArray(r) ? r.length : 0); } catch {}
+                    window.dispatchEvent(ev);
+                  }, 0);
+                } catch {
+                  const ev = new CustomEvent("newsai:results", { detail: r });
+                  window.dispatchEvent(ev);
+                }
               } catch (err) {
                 try { console.error('[SearchBar] onResultAction error', err); } catch {}
               }

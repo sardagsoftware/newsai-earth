@@ -26,8 +26,14 @@ export default function LoginPage() {
       <form onSubmit={submit} className="w-full max-w-md card-glass p-6 rounded-lg">
         <h2 className="text-2xl font-bold mb-4">Giriş Yap</h2>
         {error && <div className="text-red-400 mb-2">{error}</div>}
-  <input className="w-full mb-2 p-2 rounded search-input" placeholder="E-posta" value={email} onChange={(e) => setEmail(e.target.value)} />
-  <input type="password" className="w-full mb-4 p-2 rounded search-input" placeholder="Parola" value={password} onChange={(e) => setPassword(e.target.value)} />
+  <div>
+    <label htmlFor="login-email" className="sr-only">E-posta</label>
+    <input id="login-email" name="email" className="w-full mb-2 p-2 rounded search-input" placeholder="E-posta" value={email} onChange={(e) => setEmail(e.target.value)} />
+  </div>
+  <div>
+    <label htmlFor="login-password" className="sr-only">Parola</label>
+    <input id="login-password" name="password" type="password" className="w-full mb-4 p-2 rounded search-input" placeholder="Parola" value={password} onChange={(e) => setPassword(e.target.value)} />
+  </div>
   <button className="w-full btn btn--primary">Giriş</button>
   <div className="mt-3 text-sm text-gray-400">Henüz hesabınız yok mu? <a href="/register" className="text-blue-400 underline">Kayıt olun</a></div>
       </form>

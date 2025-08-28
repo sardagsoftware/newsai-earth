@@ -72,6 +72,8 @@ export default function NewsPage() {
           </select>
           <input
             type="text"
+            id="news-search"
+            name="q"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Haber veya özet ara..."
