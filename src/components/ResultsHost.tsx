@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 
 export default function ResultsHost() {
   const [results, setResults] = useState<unknown[]>([]);
-  const [showDebug, setShowDebug] = useState(false);
+  const [showDebug, setShowDebug] = useState(true);
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -27,12 +27,7 @@ export default function ResultsHost() {
       // ignore
     }
 
-    // show debug UI automatically in dev or when ?debug_ui=1 is present
-    try {
-      if (process.env.NODE_ENV !== 'production' || searchParams?.get('debug_ui') === '1') {
-        setShowDebug(true);
-      }
-    } catch {}
+  // Debug UI forced on for temporary prod debugging (will be reverted)
 
     return () => window.removeEventListener("newsai:results", handler as EventListener);
   }, [searchParams]);
