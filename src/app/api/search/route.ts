@@ -81,6 +81,39 @@ function getPreview(obj: unknown, max = 1000) {
   }
 }
 
+async function normalizeResponse(r: unknown) {
+  try {
+    // If it's a standard Response, extract fields
+    if (typeof r === 'object' && r !== null && (r as any).text !== undefined && (r as any).status !== undefined) {
+      // treat as Response-like
+      try {
+        const resp = r as unknown as Response;
+        const status = (resp as any).status ?? 0;
+        const statusText = (resp as any).statusText ?? '';
+        let text = '';
+        try {
+          text = await resp.text();
+        } catch {
+          // ignore
+        }
+        let json: unknown = undefined;
+        try {
+          if (text) json = JSON.parse(text);
+        } catch {
+          // not json
+        }
+        const ok = status >= 200 && status < 300;
+        return { ok, status, statusText, text, json } as Record<string, unknown>;
+      } catch (e) {
+        return asRecord(r);
+      }
+    }
+  } catch {
+    // fall through
+  }
+  return asRecord(r);
+}
+
 function cosine(a: number[], b: number[]) {
   let dot = 0;
   let na = 0;
@@ -208,10 +241,12 @@ export async function POST(req: NextRequest) {
         try {
           if (m.path === '/api/newsai') {
             const fakeReq = new Request(`${target}`, { method: 'GET' });
-            r = await newsaiGET(fakeReq);
+            const rr = await newsaiGET(fakeReq);
+            r = await normalizeResponse(rr);
           } else if (m.path === '/api/decisions') {
             const fakeReq = new Request(`${target}`, { method: 'GET' });
-            r = await decisionsGET(fakeReq as Request);
+            const rr = await decisionsGET(fakeReq as Request);
+            r = await normalizeResponse(rr);
           }
         } catch (err) {
           logError('internal.call', { path: m.path, err });
@@ -231,22 +266,30 @@ export async function POST(req: NextRequest) {
         try {
           if (m.path === '/api/newsai') {
             const fakeReq = new Request(`${target}?q=${encodeURIComponent(q)}`);
-            r = await newsaiGET(fakeReq as Request);
+            const rr = await newsaiGET(fakeReq as Request);
+            r = await normalizeResponse(rr);
           } else if (m.path === '/api/agricultureai') {
-            r = await agricultureGET();
+            const rr = await agricultureGET();
+            r = await normalizeResponse(rr);
           } else if (m.path === '/api/climateai') {
-            r = await climateGET();
+            const rr = await climateGET();
+            r = await normalizeResponse(rr);
           } else if (m.path === '/api/elementsai') {
-            r = await elementsGET();
+            const rr = await elementsGET();
+            r = await normalizeResponse(rr);
           } else if (m.path === '/api/chemistryai') {
-            r = await chemistryGET();
+            const rr = await chemistryGET();
+            r = await normalizeResponse(rr);
           } else if (m.path === '/api/biologyai') {
-            r = await biologyGET();
+            const rr = await biologyGET();
+            r = await normalizeResponse(rr);
           } else if (m.path === '/api/historyai') {
-            r = await historyGET();
+            const rr = await historyGET();
+            r = await normalizeResponse(rr);
           } else if (m.path === '/api/decisions') {
             const fakeReq = new Request(`${target}?q=${encodeURIComponent(q)}`);
-            r = await decisionsGET(fakeReq as Request);
+            const rr = await decisionsGET(fakeReq as Request);
+            r = await normalizeResponse(rr);
           }
         } catch (err) {
           logError('internal.call', { path: m.path, err });
