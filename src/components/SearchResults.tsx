@@ -13,12 +13,31 @@ export default function SearchResults({ results }: { results: unknown[] }) {
     return results
       .map((r) => (typeof r === 'object' && r !== null ? (r as Record<string, unknown>) : { value: String(r) }))
       .map((it) => {
-        const focused = (typeof it.focused === 'string' && it.focused.trim())
-          ? (it.focused as string).trim()
-          : ((it.content as string) || (it.answer as string) || (it.summary as string) || (it.description as string) || (it.title as string) || (it.value as string) || '').trim();
-        return { ...it, focused: focused ? focused.slice(0, 2000) : '' };
+        let focused = '';
+        if (typeof it.focused === 'string' && it.focused.trim()) {
+          focused = it.focused.trim();
+        } else {
+          // check common fields
+          const keys = ['content', 'answer', 'summary', 'description', 'title', 'value'];
+          for (const k of keys) {
+            const v = it[k];
+            if (typeof v === 'string' && v.trim()) { focused = v.trim(); break; }
+          }
+          // if still empty, scan any string field on the object
+          if (!focused) {
+            for (const k of Object.keys(it)) {
+              const v = it[k];
+              if (typeof v === 'string' && v.trim()) { focused = v.trim(); break; }
+            }
+          }
+          // last resort: serialize the object to give the user something
+          if (!focused) {
+            try { focused = JSON.stringify(it).slice(0, 200); } catch { focused = ''; }
+          }
+        }
+        return { ...it, focused: focused ? String(focused).slice(0, 2000) : '' };
       })
-      .filter((it) => typeof it.focused === 'string' && it.focused.trim());
+      .filter((it) => typeof it.focused === 'string' && it.focused.trim().length > 0);
   }, [results]);
 
   // debug: log normalized length so we can see in console if results were processed
