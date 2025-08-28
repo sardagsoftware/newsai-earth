@@ -96,6 +96,14 @@ export default function ResultsHost() {
 
   return (
     <div>
+      {/* High-visibility debug banner to prove results rendered in DOM */}
+      {Array.isArray(results) && results.length > 0 && (
+        <div className="fixed top-4 right-4 z-50 px-3 py-2 bg-red-600 text-white rounded shadow-lg opacity-95">
+          <div className="text-xs font-semibold">DEBUG VISIBLE</div>
+          <div className="text-sm">Sonuç: {results.length}</div>
+          <div className="text-xs opacity-90 mt-1">{(results[0] && ( (results[0] as any).focused || JSON.stringify(results[0]).slice(0,60) ))}</div>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-2">
         <div />
         {Array.isArray(results) && results.length > 0 && (
