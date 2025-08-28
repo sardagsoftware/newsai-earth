@@ -139,7 +139,7 @@ export default function SearchBar({ onResultAction }: { onResultAction?: ResultH
             )}
           </button>
 
-          <button type="submit" disabled={loading} className="icon-btn p-2 btn--primary rounded" aria-busy={loading} data-tooltip={t('showcase',(typeof document !== 'undefined' && (document as any).userLocale) || undefined)}>
+          <button type="submit" disabled={loading} className="icon-btn p-2 btn--primary rounded" aria-busy={loading} data-tooltip={t('showcase',(typeof document !== 'undefined' && (document as unknown as Record<string, unknown>).userLocale as string) || undefined)}>
             {loading ? (
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin w-5 h-5" aria-hidden>
                 <path d="M21 12a9 9 0 0 1-9 9"></path>
