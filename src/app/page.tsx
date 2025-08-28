@@ -34,17 +34,18 @@ export default function Home() {
                         if (!s || typeof s !== 'object') { flat.push(s); continue; }
                         const payload = (s as Record<string, unknown>).payload ?? s;
                         if (payload && typeof payload === 'object') {
-                          if (Array.isArray((payload as any).articles)) {
-                            for (const a of (payload as any).articles) flat.push(a);
-                          } else if (Array.isArray(payload)) {
-                            for (const a of (payload as any)) flat.push(a);
+                          const pRec = payload as Record<string, unknown>;
+                          if (Array.isArray(pRec.articles)) {
+                            for (const a of pRec.articles as unknown[]) flat.push(a);
+                          } else if (Array.isArray(payload as unknown[])) {
+                            for (const a of payload as unknown[]) flat.push(a);
                           } else {
                             flat.push(payload);
                           }
                         } else {
                           flat.push(payload);
                         }
-                      } catch (e) {
+                      } catch {
                         // ignore per-item flatten errors
                       }
                     }
