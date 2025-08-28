@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { t } from "../lib/i18n";
 import Link from "next/link";
 
 export default function NavBar() {
@@ -16,7 +17,7 @@ export default function NavBar() {
               <div className="text-white font-semibold">newsai.earth</div>
             </Link>
             {/* small showcase area next to brand */}
-            <div className="hidden sm:flex items-center ml-4 px-3 py-1 rounded-md bg-gradient-to-r from-[#002b45] to-[#003a5a] text-xs text-[#cfeef8]">
+            <div className="hidden sm:flex items-center ml-4 small-chip text-xs">
               Multimodal arama • AI destekli
             </div>
         </div>
@@ -26,18 +27,18 @@ export default function NavBar() {
           </svg>
         </button>
 
-        <nav className={`hidden md:flex items-center gap-3 text-sm text-gray-300 ${open ? 'block' : ''}`}>
-          <a href="/decisions" className="px-3 py-1 rounded-md btn-gradient text-black font-medium">Kararlar</a>
-          <a href="/about" className="px-3 py-1 rounded-md bg-[#002b45] hover:bg-[#003a5a]">Hakkında</a>
-          <a href="/contact" className="px-3 py-1 rounded-md bg-[#002b45] hover:bg-[#003a5a]">İletişim</a>
+        <nav className={`hidden md:flex items-center gap-3 text-sm ${open ? 'block' : ''}`}>
+          <a href="/decisions" className="btn btn-gradient">{t('decisions', typeof document !== 'undefined' ? (document as any).userLocale : undefined)}</a>
+          <a href="/about" className="btn">Hakkında</a>
+          <a href="/contact" className="btn">İletişim</a>
           {!user ? (
             <>
-              <a href="/login" className="px-3 py-1 rounded-md bg-transparent border border-gray-700 hover:bg-gray-800">Giriş</a>
-              <a href="/register" className="px-3 py-1 rounded-md bg-[#0077b6] text-white">Kayıt Ol</a>
+              <a href="/login" className="btn" style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.06)' }}>Giriş</a>
+              <a href="/register" className="btn btn--primary">Kayıt Ol</a>
             </>
           ) : (
             <>
-              <a href="/settings" className="px-3 py-1 rounded-md bg-[#002b45]">{user.name ?? user.email}</a>
+              <a href="/settings" className="btn">{user.name ?? user.email}</a>
             </>
           )}
         </nav>
@@ -47,16 +48,16 @@ export default function NavBar() {
       {open && (
         <div className="md:hidden px-4 pb-4">
           <div className="flex flex-col gap-2">
-            <a href="/decisions" className="px-3 py-2 rounded-md btn-gradient text-black font-medium text-center">Kararlar</a>
-            <a href="/about" className="px-3 py-2 rounded-md bg-[#002b45] text-center">Hakkında</a>
-            <a href="/contact" className="px-3 py-2 rounded-md bg-[#002b45] text-center">İletişim</a>
+            <a href="/decisions" className="btn btn-gradient text-center">Kararlar</a>
+            <a href="/about" className="btn text-center">Hakkında</a>
+            <a href="/contact" className="btn text-center">İletişim</a>
             {!user ? (
               <>
-                <a href="/login" className="px-3 py-2 rounded-md bg-transparent border border-gray-700 text-center">Giriş</a>
-                <a href="/register" className="px-3 py-2 rounded-md bg-[#0077b6] text-white text-center">Kayıt Ol</a>
+                <a href="/login" className="btn text-center" style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.06)' }}>Giriş</a>
+                <a href="/register" className="btn btn--primary text-center">Kayıt Ol</a>
               </>
             ) : (
-              <a href="/settings" className="px-3 py-2 rounded-md bg-[#002b45] text-center">{user.name ?? user.email}</a>
+            <a href="/settings" className="btn text-center">{user.name ?? user.email}</a>
             )}
           </div>
         </div>

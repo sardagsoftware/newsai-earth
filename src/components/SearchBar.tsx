@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
+import { t } from "../lib/i18n";
 
 type ResultHandler = (res: unknown) => void;
 
@@ -17,6 +18,8 @@ export default function SearchBar({ onResultAction }: { onResultAction?: ResultH
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+  // detect user locale from browser and store on document for server-aware parts
+  try { const lang = navigator.language || (navigator as any).userLanguage; (document as any).userLocale = lang; } catch(_){ }
   const SpeechRecognition = (window as unknown) && ((window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition || (window as unknown as { SpeechRecognition?: unknown }).SpeechRecognition);
     if (!SpeechRecognition) return;
     type Recog = {
@@ -77,7 +80,7 @@ export default function SearchBar({ onResultAction }: { onResultAction?: ResultH
 
   async function submit(e?: React.FormEvent) {
     e?.preventDefault();
-    if (!q && images.length === 0 && files.length === 0) return;
+  if (!q && images.length === 0 && files.length === 0) return;
     setLoading(true);
     setResults([]);
 
@@ -119,7 +122,7 @@ export default function SearchBar({ onResultAction }: { onResultAction?: ResultH
             onChange={(e) => setQ(e.target.value)}
             placeholder="Ara: örn. iklim değişikliği, tarım uygulamaları..."
             aria-label="Arama"
-            className="search-input flex-1 w-full px-4 py-3 rounded bg-[#0b1220] text-white placeholder:text-gray-400"
+            className="search-input flex-1 w-full px-4 py-3 rounded text-white placeholder:text-gray-400"
           />
 
           <button type="button" onClick={toggleRecord} title="Sesle arama" aria-pressed={recording} className={`icon-btn ${recording ? "recording" : ""} p-2`}> 
@@ -136,7 +139,7 @@ export default function SearchBar({ onResultAction }: { onResultAction?: ResultH
             )}
           </button>
 
-          <button type="submit" disabled={loading} className="icon-btn p-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded" aria-busy={loading} data-tooltip="Ara">
+          <button type="submit" disabled={loading} className="icon-btn p-2 btn--primary rounded" aria-busy={loading} data-tooltip={t('showcase',(typeof document !== 'undefined' && (document as any).userLocale) || undefined)}>
             {loading ? (
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin w-5 h-5" aria-hidden>
                 <path d="M21 12a9 9 0 0 1-9 9"></path>
@@ -179,15 +182,14 @@ export default function SearchBar({ onResultAction }: { onResultAction?: ResultH
         </div>
 
         {results.length > 0 && (
-          <div className="mt-3 search-results-card rounded-lg p-3 max-h-80 overflow-auto">
+          <div className="mt-3 search-results-card rounded-lg p-3 max-h-80 overflow-auto card-appear">
             {results.map((r, i) => {
               const item = r as unknown as Record<string, unknown>;
-              const header = (item["source"] ?? item["category"]) as string | undefined;
-              const body = (item["title"] ?? item["summary"]) as string | undefined;
+              // For best UX, if the result contains an explicit 'content' or 'answer', surface only that
+              const focused = (item['content'] || item['answer'] || item['summary'] || item['description'] || item['title']) as string | undefined;
               return (
                 <div key={i} className="mb-2 border-b border-gray-800 pb-2">
-                  <div className="text-sm text-gray-300 font-semibold">{header ?? "Sonuç"}</div>
-                  <div className="text-sm text-gray-200">{body ?? JSON.stringify(item).slice(0, 200)}</div>
+                  <div className="text-sm text-gray-200">{focused ? focused : JSON.stringify(item).slice(0, 200)}</div>
                 </div>
               );
             })}

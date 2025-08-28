@@ -7,10 +7,24 @@ export default function SearchResults({ results }: { results: unknown[] }) {
   const [visibleCount, setVisibleCount] = useState(9);
   const [expanded, setExpanded] = useState<number | null>(null);
 
-  const total = Array.isArray(results) ? results.length : 0;
-  const visible = useMemo(() => (Array.isArray(results) ? results.slice(0, visibleCount) : []), [results, visibleCount]);
+  // normalize results: prefer server-shaped { focused } but be tolerant of legacy shapes
+  const normalized = useMemo(() => {
+    if (!Array.isArray(results)) return [] as Record<string, unknown>[];
+    return results
+      .map((r) => (typeof r === 'object' && r !== null ? (r as Record<string, unknown>) : { value: String(r) }))
+      .map((it) => {
+        const focused = (typeof it.focused === 'string' && it.focused.trim())
+          ? (it.focused as string).trim()
+          : ((it.content as string) || (it.answer as string) || (it.summary as string) || (it.description as string) || (it.title as string) || (it.value as string) || '').trim();
+        return { ...it, focused: focused ? focused.slice(0, 2000) : '' };
+      })
+      .filter((it) => typeof it.focused === 'string' && it.focused.trim());
+  }, [results]);
 
-  if (!results || results.length === 0) return null;
+  const total = normalized.length;
+  const visible = useMemo(() => normalized.slice(0, visibleCount), [normalized, visibleCount]);
+
+  if (!normalized || normalized.length === 0) return null;
 
   function toggleExpand(i: number) {
     setExpanded((prev) => (prev === i ? null : i));
@@ -34,18 +48,18 @@ export default function SearchResults({ results }: { results: unknown[] }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {visible.map((r, i) => {
             const item = r as Record<string, unknown>;
-            const title = (item["title"] ?? item["url"] ?? item["value"] ?? "(Başlık yok)") as string;
+            // server now returns { focused } but fall back to other fields if needed
+            const focused = (typeof item.focused === 'string' && item.focused.trim()) ? item.focused as string : ((item["content"] ?? item["answer"] ?? item["summary"] ?? item["description"] ?? item["title"] ?? item["value"]) as string | undefined);
             const source = (item["source"] ?? "Kaynak") as string;
-            const summary = (item["summary"] ?? item["description"] ?? "") as string;
             const url = (item["url"] ?? item["link"] ?? item["source_url"] ?? item["href"]) as string | undefined;
             const image = (item["image"] ?? item["thumbnail"] ?? item["img"]) as string | undefined;
 
             const globalIndex = i; // i is fine inside visible slice
 
             return (
-              <article
+                <article
                 key={globalIndex}
-                className="p-4 rounded-lg border border-gray-800 hover:shadow-2xl transition-shadow bg-gradient-to-br from-[#07121a] to-[#061018] cursor-pointer"
+                className="p-4 rounded-lg border border-gray-800 hover:shadow-2xl transition-shadow bg-gradient-to-br from-[#07121a] to-[#061018] cursor-pointer card-appear"
                 onClick={() => toggleExpand(globalIndex)}
               >
                 <div className="flex flex-col h-full">
@@ -53,24 +67,23 @@ export default function SearchResults({ results }: { results: unknown[] }) {
                     <h3 className="text-sm sm:text-base font-semibold text-gray-100 mb-1">
                       {url ? (
                         <a href={url} target="_blank" rel="noopener noreferrer" className="underline hover:text-white" onClick={(e) => e.stopPropagation()}>
-                          {title}
+                          {focused ?? '(Başlık yok)'}
                         </a>
                       ) : (
-                        <span>{title}</span>
+                        <span>{focused ?? '(Başlık yok)'}</span>
                       )}
                     </h3>
 
                     {image ? (
                       // use Next.js Image for better LCP and optimization; unoptimized to avoid loader config for external icons
                       <div className="w-full h-36 mb-2 rounded-md overflow-hidden">
-                        <Image src={String(image)} alt={title} width={600} height={216} className="object-cover w-full h-full" unoptimized />
+            <Image src={String(image)} alt={String(focused ?? 'resim').slice(0,50)} width={600} height={216} className="object-cover w-full h-full" unoptimized />
                       </div>
                     ) : null}
-
-                    {summary ? <p className="text-xs sm:text-sm text-gray-400">{summary}</p> : null}
+          {focused ? <p className="text-sm text-gray-200">{focused}</p> : <p className="text-sm text-gray-400">(İçerik yok)</p>}
                   </div>
 
-                  <div className="mt-3 flex items-center justify-between">
+                    <div className="mt-3 flex items-center justify-between">
                     {url ? (
                       <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs px-2 py-1 bg-gray-800 rounded-md hover:bg-gray-700" onClick={(e) => e.stopPropagation()}>
                         Kaynağa git
@@ -87,7 +100,7 @@ export default function SearchResults({ results }: { results: unknown[] }) {
                       {item["snippet"] ? (
                         <div className="text-sm text-gray-100">{String(item["snippet"])}</div>
                       ) : (
-                        <div className="text-sm text-gray-100">{summary || JSON.stringify(item).slice(0, 1000)}</div>
+                        <div className="text-sm text-gray-100">{focused || JSON.stringify(item).slice(0, 1000)}</div>
                       )}
 
                       {/* optional meta */}

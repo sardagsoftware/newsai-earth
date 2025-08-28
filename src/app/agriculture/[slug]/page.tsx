@@ -47,7 +47,7 @@ export default function AgricultureDetail() {
           <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">{decodeURIComponent(slug.replace(/-/g, " "))}</h1>
         </div>
 
-        <article className="bg-[#07121a] p-6 rounded-2xl shadow-lg">
+  <article className="card-glass p-6 rounded-2xl shadow-lg">
           <h2 className="text-xl font-semibold mb-2">{item?.title ?? decodeURIComponent(slug.replace(/-/g, ' '))}</h2>
           <div className="text-gray-300 mb-4">{item?.summary ?? item?.description ?? 'Bu makale demo içeriğidir.'}</div>
           <div className="prose prose-invert max-w-none text-gray-200">

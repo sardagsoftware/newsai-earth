@@ -20,21 +20,21 @@ export default function ContactPage() {
 
   return (
     <ThemedLayout title="İletişim" subtitle="Bize ulaşın" accent="from-pink-400 via-orange-400 to-yellow-400">
-      <form onSubmit={handleSubmit} className="max-w-2xl space-y-4">
+  <form onSubmit={handleSubmit} className="max-w-2xl space-y-4 card-glass p-6 rounded-lg">
         <div>
           <label className="block text-sm text-gray-300">İsim</label>
-          <input value={name} onChange={(e) => setName(e.target.value)} className="w-full mt-1 px-4 py-2 rounded bg-[#0f1720] text-white" />
+          <input value={name} onChange={(e) => setName(e.target.value)} className="w-full mt-1 px-4 py-2 rounded search-input" />
         </div>
         <div>
           <label className="block text-sm text-gray-300">E-posta</label>
-          <input value={email} onChange={(e) => setEmail(e.target.value)} className="w-full mt-1 px-4 py-2 rounded bg-[#0f1720] text-white" />
+          <input value={email} onChange={(e) => setEmail(e.target.value)} className="w-full mt-1 px-4 py-2 rounded search-input" />
         </div>
         <div>
           <label className="block text-sm text-gray-300">Mesaj</label>
-          <textarea value={message} onChange={(e) => setMessage(e.target.value)} className="w-full mt-1 px-4 py-2 rounded bg-[#0f1720] text-white h-32" />
+          <textarea value={message} onChange={(e) => setMessage(e.target.value)} className="w-full mt-1 px-4 py-2 rounded search-input h-32" />
         </div>
         <div>
-          <button type="submit" className="bg-gradient-to-r from-pink-500 to-yellow-400 px-5 py-2 rounded font-semibold text-black">Gönder</button>
+          <button type="submit" className="btn btn--primary px-5 py-2">Gönder</button>
         </div>
         {status && <div className="text-green-400">{status}</div>}
       </form>

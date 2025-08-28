@@ -80,6 +80,34 @@ function getPreview(obj: unknown, max = 1000) {
   }
 }
 
+function extractFocused(item: unknown) {
+  try {
+    const it = asRecord(item);
+    const candidates = [
+      it.focused,
+      it.answer,
+      it.summary,
+      it.content,
+      it.description,
+      it.text,
+      it.title,
+      it.url,
+    ];
+    for (const c of candidates) {
+      if (typeof c === 'string' && c.trim()) return c.trim();
+    }
+    // fallback: try JSON stringify of main fields
+    const s = JSON.stringify(it);
+    return s.slice(0, 2000);
+  } catch {
+    return '';
+  }
+}
+
+function shapeResultsToFocused(arr: unknown[]) {
+  return arr.map((r) => ({ focused: extractFocused(r) }));
+}
+
 async function normalizeResponse(r: unknown) {
   try {
     // If it's a standard Response, extract fields
@@ -497,7 +525,8 @@ export async function POST(req: NextRequest) {
                       const hfScored = top.map((item, i) => ({ score: scores[i], item }));
                       hfScored.sort((a, b) => b.score - a.score);
                       const final = hfScored.map((s) => ({ ...(s.item as Record<string, unknown>), _score_hf: s.score }));
-                      return new Response(JSON.stringify({ results: final, errors: fetchErrors }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+                      // shape to focused-only before returning
+                      return new Response(JSON.stringify({ results: shapeResultsToFocused(final), errors: fetchErrors }), { status: 200, headers: { 'Content-Type': 'application/json' } });
                     }
             }
           } catch (err: unknown) {
@@ -505,7 +534,7 @@ export async function POST(req: NextRequest) {
           }
         }
 
-  return new Response(JSON.stringify({ results: top, errors: fetchErrors, debugBase: base }), { status: 200, headers: { "Content-Type": "application/json" } });
+  return new Response(JSON.stringify({ results: shapeResultsToFocused(top), errors: fetchErrors, debugBase: base }), { status: 200, headers: { "Content-Type": "application/json" } });
       } catch (err: unknown) {
         // if embedding fails, fall back to raw results
         logError('openai.embedding', err);
@@ -513,7 +542,7 @@ export async function POST(req: NextRequest) {
     }
 
   // Fallback: return deduped results without ranking
-  return new Response(JSON.stringify({ results: results.slice(0, 30), errors: fetchErrors, debugBase: base }), { status: 200, headers: { "Content-Type": "application/json" } });
+  return new Response(JSON.stringify({ results: shapeResultsToFocused(results.slice(0, 30)), errors: fetchErrors, debugBase: base }), { status: 200, headers: { "Content-Type": "application/json" } });
   } catch (err: unknown) {
     logError('search.route', err);
     return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: { "Content-Type": "application/json" } });
