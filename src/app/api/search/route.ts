@@ -18,11 +18,10 @@ function getOpenAI(): OpenAI | null {
     if (!process.env.OPENAI_API_KEY) return null;
     _openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     return _openaiClient;
-  } catch (e: unknown) {
-    // don't throw during build if key missing or constructor fails; log and return null
-    console.warn('getOpenAI init failed', e);
-    return null;
+  } catch {
+    // fall through
   }
+  return null;
 }
 
 function logError(tag: string, e: unknown) {
@@ -59,7 +58,7 @@ async function fetchWithDebug(url: string, options?: RequestInit, tag?: string) 
       } else {
         out.error = String(err);
       }
-    } catch (_e: unknown) {
+    } catch {
       out.error = 'fetch-error-serialize-failed';
     }
     return out;
@@ -93,7 +92,7 @@ async function normalizeResponse(r: unknown) {
         let text = '';
         try {
           text = await resp.text();
-        } catch (_e: unknown) {
+        } catch {
           // ignore
         }
         let json: unknown = undefined;
@@ -104,7 +103,7 @@ async function normalizeResponse(r: unknown) {
         }
         const ok = status >= 200 && status < 300;
         return { ok, status, statusText, text, json } as Record<string, unknown>;
-      } catch (_e: unknown) {
+      } catch {
         return asRecord(r);
       }
     }
@@ -323,9 +322,9 @@ export async function POST(req: NextRequest) {
           settled.push({ module: m.name, attemptedUrl: `${target}?q=${encodeURIComponent(q)}`, error: o.error ?? 'fetch-failed', status: o.status ?? 0, textPreview: txt, fallbackAttempted: fallbackTried });
         }
       }
-    } catch (_e: unknown) {
+    } catch (_: unknown) {
       // Ensure we capture detailed error info into the settled array so the prod response surfaces it
-      const e = _e as unknown;
+      const e = _ as unknown;
       logError('module.fetch', { path: m.path, err: e });
       const errMsg = e instanceof Error ? e.message : JSON.stringify(e);
       const errStack = e instanceof Error && e.stack ? e.stack : undefined;

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Footer from "../components/Footer";
 import SearchBar from "../components/SearchBar";
 import ResultsHost from "../components/ResultsHost";
 import AnimatedLogo from "../components/AnimatedLogo";
@@ -50,7 +49,7 @@ export default function Home() {
             </div>
         </div>
       </main>
-      <Footer />
+  {/* Footer provided by layout */}
     </div>
   );
 }

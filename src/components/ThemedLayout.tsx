@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import Footer from "./Footer";
 
 type Props = {
   title: string;
@@ -25,7 +24,7 @@ export default function ThemedLayout({ title, subtitle, accent = "from-blue-400 
           {children}
         </section>
       </main>
-      <Footer />
+  {/* Footer is rendered globally in app/layout.tsx */}
     </div>
   );
 }

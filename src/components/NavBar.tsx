@@ -12,9 +12,13 @@ export default function NavBar() {
       <div className="max-w-6xl mx-auto px-4 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold">NA</div>
+              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#00467f] via-[#0077b6] to-[#00b4d8] flex items-center justify-center text-white font-bold">NA</div>
               <div className="text-white font-semibold">newsai.earth</div>
             </Link>
+            {/* small showcase area next to brand */}
+            <div className="hidden sm:flex items-center ml-4 px-3 py-1 rounded-md bg-gradient-to-r from-[#002b45] to-[#003a5a] text-xs text-[#cfeef8]">
+              Multimodal arama • AI destekli
+            </div>
         </div>
   <button className="md:hidden text-gray-300" aria-label="Menü" aria-expanded={open} onClick={() => setOpen((v) => !v)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setOpen(v => !v); }}>
           <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -22,18 +26,18 @@ export default function NavBar() {
           </svg>
         </button>
 
-        <nav className={`hidden md:flex items-center gap-4 text-sm text-gray-300 ${open ? 'block' : ''}`}>
-          <a href="/decisions" className="hover:text-white">Kararlar</a>
-          <a href="/about" className="hover:text-white">Hakkında</a>
-          <a href="/contact" className="hover:text-white">İletişim</a>
+        <nav className={`hidden md:flex items-center gap-3 text-sm text-gray-300 ${open ? 'block' : ''}`}>
+          <a href="/decisions" className="px-3 py-1 rounded-md btn-gradient text-black font-medium">Kararlar</a>
+          <a href="/about" className="px-3 py-1 rounded-md bg-[#002b45] hover:bg-[#003a5a]">Hakkında</a>
+          <a href="/contact" className="px-3 py-1 rounded-md bg-[#002b45] hover:bg-[#003a5a]">İletişim</a>
           {!user ? (
             <>
-              <a href="/login" className="hover:text-white">Giriş</a>
-              <a href="/register" className="hover:text-white">Kayıt Ol</a>
+              <a href="/login" className="px-3 py-1 rounded-md bg-transparent border border-gray-700 hover:bg-gray-800">Giriş</a>
+              <a href="/register" className="px-3 py-1 rounded-md bg-[#0077b6] text-white">Kayıt Ol</a>
             </>
           ) : (
             <>
-              <a href="/settings" className="hover:text-white">{user.name ?? user.email}</a>
+              <a href="/settings" className="px-3 py-1 rounded-md bg-[#002b45]">{user.name ?? user.email}</a>
             </>
           )}
         </nav>
@@ -42,17 +46,17 @@ export default function NavBar() {
       {/* Mobile menu */}
       {open && (
         <div className="md:hidden px-4 pb-4">
-          <div className="flex flex-col gap-2 text-gray-300">
-            <a href="/decisions" className="hover:text-white">Kararlar</a>
-            <a href="/about" className="hover:text-white">Hakkında</a>
-            <a href="/contact" className="hover:text-white">İletişim</a>
+          <div className="flex flex-col gap-2">
+            <a href="/decisions" className="px-3 py-2 rounded-md btn-gradient text-black font-medium text-center">Kararlar</a>
+            <a href="/about" className="px-3 py-2 rounded-md bg-[#002b45] text-center">Hakkında</a>
+            <a href="/contact" className="px-3 py-2 rounded-md bg-[#002b45] text-center">İletişim</a>
             {!user ? (
               <>
-                <a href="/login" className="hover:text-white">Giriş</a>
-                <a href="/register" className="hover:text-white">Kayıt Ol</a>
+                <a href="/login" className="px-3 py-2 rounded-md bg-transparent border border-gray-700 text-center">Giriş</a>
+                <a href="/register" className="px-3 py-2 rounded-md bg-[#0077b6] text-white text-center">Kayıt Ol</a>
               </>
             ) : (
-              <a href="/settings" className="hover:text-white">{user.name ?? user.email}</a>
+              <a href="/settings" className="px-3 py-2 rounded-md bg-[#002b45] text-center">{user.name ?? user.email}</a>
             )}
           </div>
         </div>

@@ -40,20 +40,39 @@ export default function DecisionsPage() {
     <div className="min-h-screen bg-gray-900 text-gray-100 p-8">
       <h1 className="text-3xl font-bold mb-6">Dünya Genelinde Bakanlık Kararları</h1>
       <div className="flex flex-wrap gap-4 mb-8">
-        <select value={country} onChange={e => setCountry(e.target.value)} className="border rounded px-3 py-2">
-          <option value="">Ülke Seçin</option>
-          {countries.map(c => <option key={c} value={c}>{c}</option>)}
+        <select
+          value={country}
+          onChange={e => setCountry(e.target.value)}
+          className="bg-gradient-to-r from-[#23235b] to-[#0f2027] text-white border-none rounded-lg px-4 py-2 shadow focus:outline-none focus:ring-2 focus:ring-blue-400"
+        >
+          <option value="" className="bg-[#07121a] text-white">Ülke Seçin</option>
+          {countries.map(c => <option key={c} value={c} className="bg-[#07121a] text-white">{c}</option>)}
         </select>
-        <select value={ministry} onChange={e => setMinistry(e.target.value)} className="border rounded px-3 py-2">
-          <option value="">Bakanlık Seçin</option>
-          {ministries.map(m => <option key={m} value={m}>{m}</option>)}
+
+        <select
+          value={ministry}
+          onChange={e => setMinistry(e.target.value)}
+          className="bg-gradient-to-r from-[#23235b] to-[#0f2027] text-white border-none rounded-lg px-4 py-2 shadow focus:outline-none focus:ring-2 focus:ring-blue-400"
+        >
+          <option value="" className="bg-[#07121a] text-white">Bakanlık Seçin</option>
+          {ministries.map(m => <option key={m} value={m} className="bg-[#07121a] text-white">{m}</option>)}
         </select>
-        <select value={type} onChange={e => setType(e.target.value)} className="border rounded px-3 py-2">
-          <option value="">Karar Tipi</option>
-          {decisionTypes.map(t => <option key={t} value={t}>{t}</option>)}
+
+        <select
+          value={type}
+          onChange={e => setType(e.target.value)}
+          className="bg-gradient-to-r from-[#23235b] to-[#0f2027] text-white border-none rounded-lg px-4 py-2 shadow focus:outline-none focus:ring-2 focus:ring-blue-400"
+        >
+          <option value="" className="bg-[#07121a] text-white">Karar Tipi</option>
+          {decisionTypes.map(t => <option key={t} value={t} className="bg-[#07121a] text-white">{t}</option>)}
         </select>
-        <select value={lang} onChange={e => setLang(e.target.value)} className="border rounded px-3 py-2">
-          {languages.map(l => <option key={l} value={l}>{l.toUpperCase()}</option>)}
+
+        <select
+          value={lang}
+          onChange={e => setLang(e.target.value)}
+          className="bg-gradient-to-r from-[#23235b] to-[#0f2027] text-white border-none rounded-lg px-4 py-2 shadow focus:outline-none focus:ring-2 focus:ring-blue-400"
+        >
+          {languages.map(l => <option key={l} value={l} className="bg-[#07121a] text-white">{l.toUpperCase()}</option>)}
         </select>
       </div>
       {loading && <div className="mb-4">Yükleniyor...</div>}

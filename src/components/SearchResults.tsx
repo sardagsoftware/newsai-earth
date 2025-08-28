@@ -1,47 +1,123 @@
 "use client";
-import React from "react";
+import React, { useMemo, useState } from "react";
+import Image from "next/image";
 
 export default function SearchResults({ results }: { results: unknown[] }) {
+  // call hooks unconditionally to satisfy React rules
+  const [visibleCount, setVisibleCount] = useState(9);
+  const [expanded, setExpanded] = useState<number | null>(null);
+
+  const total = Array.isArray(results) ? results.length : 0;
+  const visible = useMemo(() => (Array.isArray(results) ? results.slice(0, visibleCount) : []), [results, visibleCount]);
+
   if (!results || results.length === 0) return null;
+
+  function toggleExpand(i: number) {
+    setExpanded((prev) => (prev === i ? null : i));
+  }
 
   return (
     <div className="w-full mt-6">
       <div className="max-w-6xl mx-auto">
-        <div className="text-sm text-gray-400 mb-2">Arama sonuçları ({results.length})</div>
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-sm text-gray-300">Arama sonuçları ({total})</div>
+          {total > visibleCount && (
+            <button
+              className="text-xs px-3 py-1 rounded-md bg-gray-800 hover:bg-gray-700 text-gray-100"
+              onClick={() => setVisibleCount((v) => Math.min(total, v + 9))}
+            >
+              Daha fazla yükle
+            </button>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {results.map((r, i) => {
-            const item = r as unknown as Record<string, unknown>;
+          {visible.map((r, i) => {
+            const item = r as Record<string, unknown>;
             const title = (item["title"] ?? item["url"] ?? item["value"] ?? "(Başlık yok)") as string;
             const source = (item["source"] ?? "Kaynak") as string;
             const summary = (item["summary"] ?? item["description"] ?? "") as string;
-            // try common url fields
             const url = (item["url"] ?? item["link"] ?? item["source_url"] ?? item["href"]) as string | undefined;
+            const image = (item["image"] ?? item["thumbnail"] ?? item["img"]) as string | undefined;
+
+            const globalIndex = i; // i is fine inside visible slice
+
             return (
-              <article key={i} className="p-4 bg-gradient-to-br from-[#07121a] to-[#061018] rounded-lg border border-gray-800 hover:shadow-2xl transition-shadow">
+              <article
+                key={globalIndex}
+                className="p-4 rounded-lg border border-gray-800 hover:shadow-2xl transition-shadow bg-gradient-to-br from-[#07121a] to-[#061018] cursor-pointer"
+                onClick={() => toggleExpand(globalIndex)}
+              >
                 <div className="flex flex-col h-full">
                   <div className="flex-1">
                     <h3 className="text-sm sm:text-base font-semibold text-gray-100 mb-1">
                       {url ? (
-                        <a href={url} target="_blank" rel="noopener noreferrer" className="underline hover:text-white">
+                        <a href={url} target="_blank" rel="noopener noreferrer" className="underline hover:text-white" onClick={(e) => e.stopPropagation()}>
                           {title}
                         </a>
                       ) : (
                         <span>{title}</span>
                       )}
                     </h3>
+
+                    {image ? (
+                      // use Next.js Image for better LCP and optimization; unoptimized to avoid loader config for external icons
+                      <div className="w-full h-36 mb-2 rounded-md overflow-hidden">
+                        <Image src={String(image)} alt={title} width={600} height={216} className="object-cover w-full h-full" unoptimized />
+                      </div>
+                    ) : null}
+
                     {summary ? <p className="text-xs sm:text-sm text-gray-400">{summary}</p> : null}
                   </div>
+
                   <div className="mt-3 flex items-center justify-between">
                     {url ? (
-                      <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs px-2 py-1 bg-gray-800 rounded-md hover:bg-gray-700">Kaynağa git</a>
+                      <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs px-2 py-1 bg-gray-800 rounded-md hover:bg-gray-700" onClick={(e) => e.stopPropagation()}>
+                        Kaynağa git
+                      </a>
                     ) : null}
                     <div className="text-xs text-gray-500 whitespace-nowrap ml-2">{source}</div>
                   </div>
+
+                  {/* expanded detail panel */}
+                  {expanded === globalIndex && (
+                    <div className="mt-3 p-3 bg-black/30 rounded-md border border-gray-800 text-sm text-gray-200">
+                      <div className="font-medium mb-1">Detaylar</div>
+                      {/* show query-focused snippet if present, otherwise full summary */}
+                      {item["snippet"] ? (
+                        <div className="text-sm text-gray-100">{String(item["snippet"])}</div>
+                      ) : (
+                        <div className="text-sm text-gray-100">{summary || JSON.stringify(item).slice(0, 1000)}</div>
+                      )}
+
+                      {/* optional meta */}
+                      <div className="mt-2 text-xs text-gray-400">
+                        {url && (
+                          <div>
+                            Kaynak: <a href={url} target="_blank" rel="noreferrer" className="underline">{url}</a>
+                          </div>
+                        )}
+                        <div>Kaynak türü: {String(item["type"] ?? "- ")}</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </article>
             );
           })}
         </div>
+
+        {/* show overall pagination / load more control */}
+        {visibleCount < total && (
+          <div className="mt-6 flex justify-center">
+            <button
+              className="px-4 py-2 rounded-md btn-gradient text-black font-semibold shadow-lg"
+              onClick={() => setVisibleCount((v) => Math.min(total, v + 12))}
+            >
+              Daha fazla göster
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

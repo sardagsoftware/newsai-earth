@@ -1,6 +1,5 @@
 "use client";
 "use client";
-import Footer from "../../components/Footer";
 import React, { useState } from "react";
 import Head from "next/head";
 import ArticleCard from "../../components/ArticleCard";
@@ -96,7 +95,7 @@ export default function NewsPage() {
           })}
         </div>
       </main>
-      <Footer />
+  {/* Footer provided by layout */}
     </div>
   );
 }
