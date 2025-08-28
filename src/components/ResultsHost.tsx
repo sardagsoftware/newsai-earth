@@ -1,16 +1,14 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import SearchResults from "./SearchResults";
-import DebugResults from "./DebugResults";
 import { useSearchParams } from "next/navigation";
 
 export default function ResultsHost() {
   const [results, setResults] = useState<unknown[]>([]);
-  const [showDebug, setShowDebug] = useState(false);
+  // production: no debug UI state
   const searchParams = useSearchParams();
 
   useEffect(() => {
-  console.info('[ResultsHost] effect mount start');
     const normalizeIncoming = (incoming: unknown): unknown[] => {
       try {
         // Accept many shapes: array, { results: [] }, { settled: [...] }, single object, string
@@ -71,9 +69,7 @@ export default function ResultsHost() {
 
     const handler = (e: Event) => {
       const ce = e as CustomEvent;
-  try { console.info('[ResultsHost] event received, detail count maybe:', Array.isArray(ce.detail) ? (ce.detail as unknown[]).length : typeof ce.detail); } catch {}
       const normalized = normalizeIncoming(ce.detail);
-  try { console.info('[ResultsHost] normalized results count:', Array.isArray(normalized) ? normalized.length : 0); } catch {}
       setResults(normalized);
     };
     window.addEventListener("newsai:results", handler as EventListener);
@@ -81,15 +77,11 @@ export default function ResultsHost() {
     try {
       const g = (window as unknown as Record<string, unknown>).__newsai_latest_results as unknown | undefined;
       if (g) {
-        try { console.info('[ResultsHost] using cached global results (raw) present'); } catch {}
         const normalized = normalizeIncoming(g);
-        try { console.info('[ResultsHost] normalized cached results count:', Array.isArray(normalized) ? normalized.length : 0); } catch {}
         setResults(normalized);
-      } else {
-        try { console.info('[ResultsHost] no cached global results found'); } catch {}
       }
-    } catch (err) {
-      try { console.warn('[ResultsHost] error checking global cache', err); } catch {}
+    } catch {
+      // ignore
     }
 
   // Debug UI forced on for temporary prod debugging (will be reverted)
@@ -106,38 +98,6 @@ export default function ResultsHost() {
         )}
       </div>
       <SearchResults results={results} />
-      {/* Quick DOM preview for debugging: show first 3 normalized items plainly */}
-      {Array.isArray(results) && results.length > 0 && (
-        <div className="mt-3 p-3 bg-black/20 rounded text-sm text-gray-200">
-          <div className="font-medium mb-2">Hızlı Önizleme (ilk 3)</div>
-          {results.slice(0, 3).map((r, i) => {
-            const it = r as Record<string, unknown>;
-            const focused = (it['focused'] ?? it['summary'] ?? it['title'] ?? it['content'] ?? it['answer']) as string | undefined;
-            return (
-              <div key={i} className="mb-2 border-b border-gray-800 pb-2">
-                <div className="text-sm text-gray-100">{focused ? focused : JSON.stringify(it).slice(0, 200)}</div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Small persistent badge to diagnose visibility issues - will be removed when confirmed fixed */}
-      {Array.isArray(results) && results.length > 0 && (
-        <div id="newsai-debug-badge" className="fixed bottom-4 right-4 z-50 px-3 py-2 bg-blue-700 text-white rounded shadow-lg opacity-95">
-          <div className="text-xs font-semibold">RESULTS_PRESENT</div>
-          <div className="text-sm">{results.length} sonuç</div>
-        </div>
-      )}
-      {showDebug && (
-        <div className="mt-4">
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-gray-300">Debug: </label>
-            <button onClick={() => setShowDebug((s) => !s)} className="text-sm text-blue-300 underline">toggle raw payload</button>
-          </div>
-          <DebugResults data={results} />
-        </div>
-      )}
     </div>
   );
 }
