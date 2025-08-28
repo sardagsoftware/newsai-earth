@@ -18,12 +18,14 @@ export default function Home() {
           <div className="w-full">
             <SearchBar onResultAction={(res: unknown) => {
               try {
+                // DEBUG: trace incoming result payload from /api/search
+                try { console.debug('[SearchBar] onResultAction payload:', res); } catch {}
                 const r = (res as unknown as Record<string, unknown>)?.results ?? (Array.isArray(res) ? res : null);
                 (window as unknown as Record<string, unknown>).__newsai_latest_results = r as unknown;
                 const ev = new CustomEvent("newsai:results", { detail: r });
                 window.dispatchEvent(ev);
-              } catch {
-                // ignore
+              } catch (err) {
+                try { console.error('[SearchBar] onResultAction error', err); } catch {}
               }
             }} />
 

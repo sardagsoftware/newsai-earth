@@ -25,21 +25,35 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
         run: |
           echo "Checking Vercel secrets visibility (will print present/missing)"
+          MISSING=()
+
           if [ -z "$VERCEL_TOKEN" ]; then
-            echo "VERCEL_TOKEN: MISSING"
-            exit 1
+            echo "VERCEL_TOKEN: MISSING (required)"
+            MISSING+=(VERCEL_TOKEN)
           else
             echo "VERCEL_TOKEN: present"
           fi
+
           if [ -z "$VERCEL_PROJECT_ID" ]; then
-            echo "VERCEL_PROJECT_ID: MISSING"
+            echo "VERCEL_PROJECT_ID: MISSING (optional but recommended)"
+            MISSING+=(VERCEL_PROJECT_ID)
           else
             echo "VERCEL_PROJECT_ID: present"
           fi
+
           if [ -z "$VERCEL_ORG_ID" ]; then
             echo "VERCEL_ORG_ID: MISSING (optional)"
           else
             echo "VERCEL_ORG_ID: present"
+          fi
+
+          if [ ${#MISSING[@]} -ne 0 ]; then
+            echo "\nOne or more required Vercel secrets are missing: ${MISSING[*]}"
+            echo "To fix: in GitHub go to Settings → Secrets and variables → Actions → New repository secret"
+            echo "For example: Name=VERCEL_TOKEN, Value=<your-vercel-token>"
+            echo "Vercel docs: https://vercel.com/docs/platform/ci-cd#github-integration"
+            echo "If you intentionally store secrets at the environment level, ensure the workflow is allowed to access that environment."
+            exit 1
           fi
         shell: bash
       - name: Vercel Action
