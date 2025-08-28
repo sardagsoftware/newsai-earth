@@ -96,6 +96,12 @@ export default function ResultsHost() {
 
   return (
     <div>
+      <div className="flex items-center justify-between mb-2">
+        <div />
+        {Array.isArray(results) && results.length > 0 && (
+          <div className="text-sm text-gray-300 bg-gray-800 px-2 py-1 rounded">Sonuç: {results.length}</div>
+        )}
+      </div>
       <SearchResults results={results} />
       {showDebug && (
         <div className="mt-4">
