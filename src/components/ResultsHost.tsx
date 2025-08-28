@@ -10,6 +10,7 @@ export default function ResultsHost() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
+  console.info('[ResultsHost] effect mount start');
     const normalizeIncoming = (incoming: unknown): unknown[] => {
       try {
         // Accept many shapes: array, { results: [] }, { settled: [...] }, single object, string
@@ -70,9 +71,9 @@ export default function ResultsHost() {
 
     const handler = (e: Event) => {
       const ce = e as CustomEvent;
-      try { console.debug('[ResultsHost] event received, detail:', ce.detail); } catch {}
+  try { console.info('[ResultsHost] event received, detail count maybe:', Array.isArray(ce.detail) ? (ce.detail as unknown[]).length : typeof ce.detail); } catch {}
       const normalized = normalizeIncoming(ce.detail);
-      try { console.debug('[ResultsHost] normalized results count:', Array.isArray(normalized) ? normalized.length : 0); } catch {}
+  try { console.info('[ResultsHost] normalized results count:', Array.isArray(normalized) ? normalized.length : 0); } catch {}
       setResults(normalized);
     };
     window.addEventListener("newsai:results", handler as EventListener);
@@ -80,13 +81,15 @@ export default function ResultsHost() {
     try {
       const g = (window as unknown as Record<string, unknown>).__newsai_latest_results as unknown | undefined;
       if (g) {
-        try { console.debug('[ResultsHost] using cached global results (raw):', g); } catch {}
+        try { console.info('[ResultsHost] using cached global results (raw) present'); } catch {}
         const normalized = normalizeIncoming(g);
-        try { console.debug('[ResultsHost] normalized cached results count:', Array.isArray(normalized) ? normalized.length : 0); } catch {}
+        try { console.info('[ResultsHost] normalized cached results count:', Array.isArray(normalized) ? normalized.length : 0); } catch {}
         setResults(normalized);
+      } else {
+        try { console.info('[ResultsHost] no cached global results found'); } catch {}
       }
-    } catch {
-      // ignore
+    } catch (err) {
+      try { console.warn('[ResultsHost] error checking global cache', err); } catch {}
     }
 
   // Debug UI forced on for temporary prod debugging (will be reverted)
@@ -116,6 +119,14 @@ export default function ResultsHost() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Small persistent badge to diagnose visibility issues - will be removed when confirmed fixed */}
+      {Array.isArray(results) && results.length > 0 && (
+        <div id="newsai-debug-badge" className="fixed bottom-4 right-4 z-50 px-3 py-2 bg-blue-700 text-white rounded shadow-lg opacity-95">
+          <div className="text-xs font-semibold">RESULTS_PRESENT</div>
+          <div className="text-sm">{results.length} sonuç</div>
         </div>
       )}
       {showDebug && (
