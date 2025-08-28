@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 
 export default function ResultsHost() {
   const [results, setResults] = useState<unknown[]>([]);
-  const [showDebug, setShowDebug] = useState(true);
+  const [showDebug, setShowDebug] = useState(false);
   const searchParams = useSearchParams();
 
   useEffect(() => {
