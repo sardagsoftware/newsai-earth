@@ -1,0 +1,10 @@
+# süre | görsel | efekt | geçiş
+20 | beach01.jpg | zoom | crossfade
+20 | beach02.jpg | pan-left | crossfade
+20 | beach03.jpg | subtle-kenburns | crossfade
+20 | beach04.jpg | pan-right | crossfade
+25 | beach05.jpg | fade | crossfade
+25 | city02.jpg  | zoom | crossfade
+27 | city03.jpg  | pan-left | crossfade
+28 | city04.jpg  | pan-right | crossfade
+28 | city06.jpg  | subtle-kenburns | crossfade

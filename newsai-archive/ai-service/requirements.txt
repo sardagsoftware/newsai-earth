@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+sentence-transformers
+transformers
+torch
+pillow
+openai-whisper
+python-multipart
