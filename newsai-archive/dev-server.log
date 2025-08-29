@@ -1,0 +1,19 @@
+
+> newsai.earth@0.1.0 dev
+> next dev --turbopack
+
+   ▲ Next.js 15.5.0 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://172.16.4.87:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Compiled middleware in 139ms
+ ✓ Ready in 1910ms
+ ○ Compiling / ...
+ ✓ Compiled / in 3.7s
+ HEAD / 200 in 4189ms
+ ✓ Compiled middleware in 3ms
+ ✓ Compiled in 52ms
+ ✓ Compiled in 142ms
+[?25h
