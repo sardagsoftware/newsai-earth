@@ -40,34 +40,22 @@ export default function SearchResults({ results }: { results: unknown[] }) {
       .filter((it) => typeof it.focused === 'string' && it.focused.trim().length > 0);
   }, [results]);
 
-  // debug: log normalized length so we can see in console if results were processed
-  try { console.info('[SearchResults] normalized length:', Array.isArray(normalized) ? normalized.length : 0); } catch {}
+  // debug log only in development
+  if (process.env.NODE_ENV !== 'production') {
+    try { console.debug('[SearchResults] normalized length:', Array.isArray(normalized) ? normalized.length : 0); } catch {}
+  }
 
   const total = normalized.length;
   const visible = useMemo(() => normalized.slice(0, visibleCount), [normalized, visibleCount]);
 
   if (!normalized || normalized.length === 0) {
-    // Render a small debug panel so users can see what's going on when no cards render
-    // Additionally, if raw results exist, show a fallback list so the user can see content immediately.
-    const rawCount = Array.isArray(results) ? results.length : (results ? 1 : 0);
+    // No normalized items — render a simple empty state (no debug info in production)
     return (
       <div className="w-full mt-6">
         <div className="max-w-6xl mx-auto p-4 rounded bg-black/30 text-sm text-gray-200">
-          <div className="font-semibold mb-2">Debug: no normalized results</div>
-          <div>Raw results prop length: {rawCount}</div>
-          <div className="mt-2 text-xs break-words">Sample: {JSON.stringify(Array.isArray(results) ? results.slice(0,3) : results)}</div>
+          <div className="font-semibold mb-2">Arama sonucu yok</div>
+          <div className="mt-2 text-xs text-gray-400">Lütfen farklı bir sorgu deneyin veya filtreleri temizleyin.</div>
         </div>
-
-        {rawCount > 0 && (
-          <div className="max-w-6xl mx-auto mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {(Array.isArray(results) ? results.slice(0, 9) : [results]).map((r, i) => (
-              <article key={i} className="p-4 rounded-lg border border-gray-800 bg-gradient-to-br from-[#07121a] to-[#061018]">
-                <div className="text-sm text-white mb-1">{((r && (r as Record<string, unknown>).focused) || JSON.stringify(r)).toString().slice(0,200)}</div>
-                <div className="text-xs text-gray-400">Raw fallback view</div>
-              </article>
-            ))}
-          </div>
-        )}
       </div>
     );
   }

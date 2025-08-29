@@ -56,17 +56,19 @@ export default function Home() {
                   }
                 } catch {}
 
+                // Ensure we always store and dispatch an array to simplify downstream handling
+                const arr = Array.isArray(r) ? r : (r ? [r] : []);
                 // store global cache
-                (window as unknown as Record<string, unknown>).__newsai_latest_results = r as unknown;
+                (window as unknown as Record<string, unknown>).__newsai_latest_results = arr as unknown;
                 // Dispatch after a microtask to avoid race where ResultsHost hasn't mounted yet
                 try {
                   setTimeout(() => {
-                    const ev = new CustomEvent("newsai:results", { detail: r });
-                    try { console.debug('[SearchBar] dispatching newsai:results (delayed) count:', Array.isArray(r) ? r.length : 0); } catch {}
+                    const ev = new CustomEvent("newsai:results", { detail: arr });
+                    try { console.debug('[SearchBar] dispatching newsai:results (delayed) count:', Array.isArray(arr) ? arr.length : 0); } catch {}
                     window.dispatchEvent(ev);
                   }, 0);
                 } catch {
-                  const ev = new CustomEvent("newsai:results", { detail: r });
+                  const ev = new CustomEvent("newsai:results", { detail: arr });
                   window.dispatchEvent(ev);
                 }
               } catch (err) {
